@@ -92,11 +92,11 @@ const reportDefs = [
   { id: 'rep-002', segmentId: 'r1-t04', type: 'buraco', kind: 'obstacle', description: 'Buraco perto da guia rebaixada, lado direito.', daysAgo: 2, userId: 'u-v02', votes: { confirm: 3, incorrect: 1 } },
   { id: 'rep-003', segmentId: 'r1-t04', type: 'piso_regular', kind: 'facilitator', description: 'Piso novo no começo do trecho.', daysAgo: 1, userId: 'u-v03', votes: {} },
   { id: 'rep-004', segmentId: 'r1-t05', type: 'obra', kind: 'obstacle', description: 'Obra parcial na calçada do lado do túnel.', daysAgo: 47, userId: 'u-v04', votes: {} },
-  { id: 'rep-005', segmentId: 'r2-t02', type: 'buraco', kind: 'obstacle', description: 'Buraco grande no passeio dentro do túnel.', daysAgo: 1, userId: 'u-v05', votes: { confirm: 3 } },
-  { id: 'rep-006', segmentId: 'r2-t02', type: 'calcada_estreita', kind: 'obstacle', description: 'Passeio do túnel muito estreito para cadeira de rodas.', daysAgo: 1, userId: 'u-v06', votes: {} },
+  { id: 'rep-005', segmentId: 'r2-t02', type: 'buraco', kind: 'obstacle', description: 'Buraco grande no passeio dentro do túnel.', daysAgo: 1, userId: 'u-v05', votes: { confirm: 6 } },
+  { id: 'rep-006', segmentId: 'r2-t02', type: 'calcada_estreita', kind: 'obstacle', description: 'Passeio do túnel muito estreito para cadeira de rodas.', daysAgo: 1, userId: 'u-v06', votes: { confirm: 2 } },
   { id: 'rep-007', segmentId: 'r3-t02', type: 'obra', kind: 'obstacle', description: 'Obra com desvio de cerca de 180 m.', daysAgo: 47, userId: 'u-v07', votes: { confirm: 1 } },
   // Relatos do usuário José
-  { id: 'rep-101', segmentId: 'r3-t01', type: 'buraco', kind: 'obstacle', description: 'Buraco na esquina com a Rua Siqueira Campos.', daysAgo: 20, userId: 'u-jose', votes: { confirm: 5 } },
+  { id: 'rep-101', segmentId: 'r2-t01', type: 'buraco', kind: 'obstacle', description: 'Buraco perto da farmácia, na subida da Siqueira Campos.', daysAgo: 20, userId: 'u-jose', votes: { confirm: 5 } },
   { id: 'rep-102', segmentId: 'r2-t02', type: 'rampa', kind: 'facilitator', description: 'Rampa de acesso nova na saída do túnel.', daysAgo: 3, userId: 'u-jose', votes: { confirm: 2 } },
   { id: 'rep-103', segmentId: 'r1-t02', type: 'calcada_larga', kind: 'facilitator', description: 'Calçada larga e sem obstáculos.', daysAgo: 1, userId: 'u-jose', votes: {} },
 ];
