@@ -1,0 +1,28 @@
+{
+  "name": "acessario",
+  "private": true,
+  "version": "1.0.0",
+  "description": "AcessaRio — navegação urbana inclusiva com rotas acessíveis e mapa colaborativo.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "api": "node server/index.js",
+    "api:reset": "node server/reset.js",
+    "start": "npm run api:reset && concurrently -k -n api,web \"npm run api\" \"npm run dev\"",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "node --test tests/"
+  },
+  "dependencies": {
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^5.0.0",
+    "concurrently": "^9.2.0",
+    "vite": "^7.1.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
