@@ -66,8 +66,10 @@ export function LocationPicker({ segments, point, onChange, hint = 'Arraste para
             <span className="strong" style={{ color: 'var(--green)' }}>{nearest.segment.street}</span>
             <span className="muted"> · {segmentCode(nearest.segment)}</span>
           </span>
-        ) : (
+        ) : point ? (
           <span className="field__error" style={{ margin: 0 }}>Ponto fora dos trechos mapeados</span>
+        ) : (
+          <span className="muted">Marque um ponto sobre um trecho (linhas tracejadas)</span>
         )}
         <button type="button" className="link-button small" onClick={useDeviceLocation}>
           Usar minha localização

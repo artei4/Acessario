@@ -134,7 +134,7 @@ h3 {
 
 .grid-2 {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 8px;
 }
 
@@ -817,7 +817,6 @@ h3 {
 .map--bleed {
   border-radius: 0;
   border: 0;
-  margin: 0 -16px;
 }
 
 .map svg {
@@ -920,7 +919,7 @@ h3 {
 
 .time-bars {
   display: grid;
-  grid-template-columns: 70px 1fr auto;
+  grid-template-columns: 96px 1fr auto;
   align-items: center;
   gap: 4px 8px;
   font-size: 12px;
@@ -1149,6 +1148,19 @@ h3 {
 @keyframes shimmer {
   to {
     background-position: -200% 0;
+  }
+}
+
+.profile-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+  gap: 8px;
+  align-items: start;
+}
+
+@media (max-width: 380px) {
+  .profile-columns {
+    grid-template-columns: 1fr;
   }
 }
 

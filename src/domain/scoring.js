@@ -206,7 +206,10 @@ export function evaluateRoute(route, segments, reports, context = {}) {
     maxSlope,
     flatAndRegular: steepLength / totalLength < 0.05 && ordered.every((s) => s.floor === 'regular'),
     wideSidewalks: ordered.every((s) => s.widthM >= 1.4),
-    supportPoints: [...new Set(ordered.flatMap((s) => s.supportPoints ?? []))],
+    supportPoints:
+      context.preferences?.includeSupportPoints === false
+        ? []
+        : [...new Set(ordered.flatMap((s) => s.supportPoints ?? []))],
     reports: routeReports,
     activeReports,
     confirmations: activeReports.reduce((sum, r) => sum + r.tally.confirm, 0),
