@@ -1,7 +1,8 @@
 const env = import.meta.env ?? {};
 
 export const config = {
-  apiUrl: (env.VITE_API_URL ?? 'http://localhost:3001').replace(/\/+$/, ''),
+  /** Em desenvolvimento, o servidor local; publicado na Vercel, a função em /api do mesmo site. */
+  apiUrl: (env.VITE_API_URL || (env.DEV === false || env.PROD ? '/api' : 'http://localhost:3001')).replace(/\/+$/, ''),
   /**
    * "http" (padrão) usa a API REST de server/ (npm start).
    * "local" roda o mesmo núcleo REST no navegador, com localStorage (npm run dev:demo).
