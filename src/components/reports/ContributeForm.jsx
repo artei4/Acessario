@@ -18,10 +18,11 @@ const KINDS = [
 
 /** "Contribuir com o mapa" (tela 6): relato livre em qualquer trecho mapeado. */
 export function ContributeForm({ onCreated }) {
-  const { segments, locate, submit, submitting } = useContribution({ onCreated });
+  const { segments, submit, submitting } = useContribution({ onCreated });
   const [kind, setKind] = useState('facilitator');
   const [type, setType] = useState('');
   const [point, setPoint] = useState(null);
+  const [placeName, setPlaceName] = useState(null);
   const [description, setDescription] = useState('');
   const [error, setError] = useState(null);
   const [result, setResult] = useState(null);
@@ -36,14 +37,15 @@ export function ContributeForm({ onCreated }) {
     event.preventDefault();
     setResult(null);
     if (!type) return setError('Escolha o que você encontrou.');
-    if (!point || !locate(point)) return setError('Marque no mapa um ponto sobre um dos trechos mapeados.');
+    if (!point) return setError('Marque o local no mapa, busque um endereço ou use a sua localização.');
     setError(null);
     try {
-      const outcome = await submit({ point, kind, type, description, photo: photo.photo });
+      const outcome = await submit({ point, placeName, kind, type, description, photo: photo.photo });
       setResult(outcome);
       setType('');
       setDescription('');
       setPoint(null);
+      setPlaceName(null);
       photo.clear();
     } catch {
       // a mensagem de erro já aparece no aviso flutuante
@@ -65,7 +67,17 @@ export function ContributeForm({ onCreated }) {
         legend={kind === 'facilitator' ? 'O que facilita?' : 'O que dificulta?'}
       />
 
-      <LocationPicker segments={segments} point={point} onChange={setPoint} hint="Arraste para ajustar" withAddressSearch />
+      <LocationPicker
+        segments={segments}
+        point={point}
+        onChange={(p, place) => {
+          setPoint(p);
+          setPlaceName(place?.name ?? null);
+        }}
+        hint="Arraste para ajustar"
+        withAddressSearch
+        anywhere
+      />
 
       <div>
         <label className="sr-only" htmlFor="contribution-description">
@@ -99,9 +111,11 @@ export function ContributeForm({ onCreated }) {
 
       {result && (
         <Notice tone="success" role="status">
-          {result.impact !== 0
-            ? `Seu relato de ${typeLabel} somou ${signed(result.impact)} ${Math.abs(result.impact) === 1 ? 'ponto' : 'pontos'} à nota do ${result.code} (${result.segment.street}).`
-            : `Seu relato foi registrado no ${result.code} (${result.segment.street}) e passa a pesar na nota quando for confirmado.`}
+          {!result.segment
+            ? `Seu relato de ${typeLabel} foi registrado em ${result.placeName ?? 'o ponto marcado'}. Ele aparece em toda rota que passar por aqui e ganha peso quando outras pessoas confirmarem.`
+            : result.impact
+              ? `Seu relato de ${typeLabel} somou ${signed(result.impact)} ${Math.abs(result.impact) === 1 ? 'ponto' : 'pontos'} à nota do ${result.code} (${result.segment.street}).`
+              : `Seu relato foi registrado no ${result.code} (${result.segment.street}) e passa a pesar na nota quando for confirmado.`}
         </Notice>
       )}
     </form>

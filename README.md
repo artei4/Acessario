@@ -139,7 +139,7 @@ O projeto `acessario` na Vercel publica a branch `main` do GitHub (`artei4/Acess
 - **Confirmar relato**: confirmar, informar que foi resolvido ou que está incorreto; trocar ou desfazer o voto.
 - **Novo problema**: marcar o ponto no mapa (toque, arraste ou localização do aparelho), escolher o tipo, descrever e anexar foto (reduzida no navegador antes do envio).
 - **Perfil**: editar nome e perfil, preferências de rota, rotas recentes (abrir/remover), **meus relatos** (editar descrição e excluir).
-- **Contribuir com o mapa** em qualquer trecho, com busca de endereço pela **API Nominatim (OpenStreetMap)**, e retorno de quanto o relato mexeu na nota do trecho.
+- **Contribuir com o mapa em qualquer ponto do Rio**: tocando no mapa, buscando um endereço (com sugestões) ou usando a localização do aparelho. Perto de um trecho de rota salvo, o relato fica ligado a ele e o app mostra quanto mexeu na nota. Longe de qualquer rota, o relato é salvo com a localização e o nome do lugar (do endereço escolhido ou da busca reversa do Photon). Ele passa a valer para **toda rota que passar a até 25 m dali**, inclusive rotas calculadas depois.
 
 ### CRUD completo
 
@@ -265,7 +265,7 @@ curl -X POST http://localhost:3001/votes -H "Content-Type: application/json" \
 | `places` | `name`, `neighborhood`, `lat`, `lon`, `osmId` (lugares vindos da busca) |
 | `routes` | `name`, `via`, `originId`, `destinationId`, `distanceKm`, `baseMinutes`, `source` (`osm` quando calculada pelo roteador) |
 | `segments` | `routeId`, `order`, `street`, `lengthM`, `widthM`, `slopePct`, `hasStairs`, `hasRamps`, `floor`, `tactile`, `supportPoints`, `surveyedAt`, `path [[lat, lon]]` |
-| `reports` | `segmentId`, `kind` (`obstacle`/`facilitator`), `type`, `description`, `photo`, `location`, `userId`, `createdAt` |
+| `reports` | `segmentId` (ou `null`), `location { lat, lon }`, `placeName`, `kind` (`obstacle`/`facilitator`), `type`, `description`, `photo`, `userId`, `createdAt`. Precisa de `segmentId` **ou** `location` |
 | `votes` | `reportId`, `userId`, `type` (`confirm`/`resolved`/`incorrect`), `createdAt` |
 | `searches` | `userId`, `originId`, `destinationId`, `createdAt` |
 
@@ -308,7 +308,7 @@ Começa em 65 e soma pontos do levantamento, ponderados pelo perfil:
 | Piso tátil / sem piso tátil | +10 / −5 (só pesa para deficiência visual) |
 | Inclinação acima de 2% | −1,5 por ponto percentual (×1,5 com "Priorizar rotas planas") |
 
-Depois, cada relato ativo soma (facilidade) ou subtrai (obstáculo) seus pontos × peso do perfil × peso do status. Um relato de inclinação não é contado de novo se a inclinação já foi medida no levantamento.
+Depois, cada relato ativo soma (facilidade) ou subtrai (obstáculo) seus pontos × peso do perfil × peso do status. Entram os relatos do próprio trecho e os relatos com localização a até 25 m dele (`attachReportsToSegments` em `domain/geo.js`). Assim, relatos feitos em qualquer ponto, ou numa rota que passa pela mesma rua, valem para todas as rotas que passam por ali. Um relato de inclinação não é contado de novo se a inclinação já foi medida no levantamento.
 
 ### Nota e tempo da rota
 
@@ -326,7 +326,7 @@ Depois, cada relato ativo soma (facilidade) ou subtrai (obstáculo) seus pontos 
 npm test
 ```
 
-32 testes com `node:test` cobrem: conversão dos lugares do Photon (incluindo endereços sem nome), conversão das rotas do roteador em trechos, trechos sem levantamento, gravação e cascata de rotas, ciclo de status dos relatos, desatualização, peso dos relatos, bloqueio por perfil, preferência por rotas planas, impacto de um relato na nota, ranqueamento com os dados de demonstração, rota no sentido inverso, CRUD/validação/cascata da API, leitura de rotas da Vercel Function, armazenamento no Blob (com um Blob simulado), enquadramento do mapa e localização do trecho mais próximo.
+37 testes com `node:test` cobrem: relatos ligados a rotas pela localização, relatos só com localização na API, conversão dos lugares do Photon (incluindo endereços sem nome), conversão das rotas do roteador em trechos, trechos sem levantamento, gravação e cascata de rotas, ciclo de status dos relatos, desatualização, peso dos relatos, bloqueio por perfil, preferência por rotas planas, impacto de um relato na nota, ranqueamento com os dados de demonstração, rota no sentido inverso, CRUD/validação/cascata da API, leitura de rotas da Vercel Function, armazenamento no Blob (com um Blob simulado), enquadramento do mapa e localização do trecho mais próximo.
 
 ---
 

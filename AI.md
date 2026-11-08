@@ -111,6 +111,18 @@ A pessoa pediu que, ao digitar "barra", o app já mostrasse opções como BarraS
 - Correção junto: endereços sem nome viravam só o número (ex.: "15900"). Agora aparecem como "Avenida das Américas, 15900".
 - **Verificação:** no navegador, com o Photon simulado, digitar "barra" letra por letra gerou **uma** busca. Apareceram as 3 sugestões, a escolha pelo teclado funcionou, repetir o termo usou o cache, e o alfinete foi para o BarraShopping no formulário de contribuição. 32 testes passando.
 
+## Sétima rodada: contribuir em qualquer lugar
+
+A pessoa mostrou que "Contribuir com o mapa" recusava pontos fora dos trechos já salvos ("Ponto fora dos trechos mapeados"), inclusive endereços digitados. Isso bloqueava a função principal do site.
+
+- **Causa:** todo relato precisava de um `segmentId`, ou seja, de um trecho de rota salvo a até 150 m.
+- **Mudança de modelo:** um relato agora pode ter só a localização (`segmentId: null`, `location`, `placeName`). A API aceita isso e exige trecho **ou** local.
+- **Relatos por localização valem para as rotas:** a função pura `attachReportsToSegments` liga a uma rota qualquer relato a até 25 m de um trecho dela. Com isso, contribuições soltas aparecem em rotas calculadas depois, e rotas que passam pela mesma rua compartilham os relatos.
+- O nome do lugar vem do endereço escolhido, da rua do trecho ou da busca reversa do Photon.
+- "Usar minha localização" deixou de recusar quem está longe das rotas.
+- **Verificação:** no navegador, com o servidor local, foram feitas uma contribuição por endereço e outra por toque no mapa, ambas longe de qualquer rota. As duas foram salvas com nome. Depois foi calculada uma rota passando pelo local, e cada relato apareceu no trecho certo. 37 testes passando.
+- O arquivo `src/hooks/useGeocoding.js`, recriado pela pessoa num commit, não é usado pelo app e foi mantido.
+
 ## Limitações do ambiente
 
 - O ambiente onde o código foi gerado **não tinha acesso à internet para `npm install`**. O projeto não foi executado com o Vite em si: foi validado com esbuild e com o compilador do Tailwind v4 chamado diretamente, mais Playwright. Ao rodar `npm install && npm start` pela primeira vez, vale conferir se as versões em `package.json` resolvem sem conflito.

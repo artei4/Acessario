@@ -29,13 +29,22 @@ export const CASCADE = {
 
 /** Campos obrigatórios na criação, por coleção. */
 export const REQUIRED_FIELDS = {
-  reports: ['segmentId', 'type', 'kind', 'userId'],
+  reports: ['type', 'kind', 'userId'],
   votes: ['reportId', 'userId', 'type'],
   searches: ['userId', 'originId', 'destinationId'],
   users: ['name'],
   places: ['name', 'lat', 'lon'],
   routes: ['originId', 'destinationId'],
   segments: ['routeId', 'path'],
+};
+
+const hasPoint = (location) =>
+  location && Number.isFinite(Number(location.lat)) && Number.isFinite(Number(location.lon));
+
+/** Regras extras de criação, por coleção. Devolvem a mensagem de erro ou null. */
+export const VALIDATORS = {
+  // um relato fica num trecho de rota ou num ponto do mapa (qualquer lugar da cidade)
+  reports: (body) => (body.segmentId || hasPoint(body.location) ? null : 'Informe o trecho (segmentId) ou o local (location) do relato'),
 };
 
 const ID_PREFIX = {
@@ -112,6 +121,8 @@ function validateBody(collection, body, { partial = false } = {}) {
   if (missing.length > 0) {
     throw new HttpError(422, `Campos obrigatórios ausentes: ${missing.join(', ')}`);
   }
+  const problem = VALIDATORS[collection]?.(body);
+  if (problem) throw new HttpError(422, problem);
 }
 
 function removeCascade(db, collection, id) {

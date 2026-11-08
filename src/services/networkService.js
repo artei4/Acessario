@@ -2,15 +2,17 @@ import { routesService, saveRoutePlan, segmentsService } from './routesService.j
 import { placesService } from './placesService.js';
 import { routingService } from './routingService.js';
 import { planFromOsrm } from '../domain/routePlanning.js';
+import { attachReportsToSegments } from '../domain/geo.js';
 import { reportsService, votesService } from './reportsService.js';
 
 /**
  * Carrega a "rede" necessária para avaliar rotas: trechos, relatos e votos.
- * As chamadas são encadeadas porque cada etapa depende dos ids da anterior.
+ * Entram os relatos feitos nos próprios trechos e os relatos feitos por localização
+ * perto deles (contribuições "em qualquer lugar" e relatos de rotas que passam pela mesma rua).
  */
 export async function loadNetwork(routes) {
   const segments = await segmentsService.listByRoutes(routes.map((r) => r.id));
-  const reports = await reportsService.listBySegments(segments.map((s) => s.id));
+  const reports = segments.length ? attachReportsToSegments(await reportsService.listAll(), segments) : [];
   const votes = await votesService.listByReports(reports.map((r) => r.id));
   return { routes, segments, reports, votes };
 }
@@ -55,10 +57,9 @@ export const networkService = {
     return loadNetwork([{ ...route, reversed: false }]);
   },
 
-  /** Todos os trechos (para localizar o trecho mais próximo de um ponto no mapa). */
+  /** Todos os trechos e todos os relatos (contribuição em qualquer ponto do mapa). */
   async loadAllSegments() {
-    const segments = await segmentsService.listAll();
-    const reports = await reportsService.listBySegments(segments.map((s) => s.id));
+    const [segments, reports] = await Promise.all([segmentsService.listAll(), reportsService.listAll()]);
     const votes = await votesService.listByReports(reports.map((r) => r.id));
     return { segments, reports, votes };
   },

@@ -25,7 +25,8 @@ export function useMyReports(userId) {
     const segmentsById = new Map(data.segments.map((s) => [s.id, s]));
     return describeReports(data.reports, data.votes).map((report) => {
       const segment = segmentsById.get(report.segmentId);
-      return { ...report, segment, segmentLabel: segment ? `${segmentCode(segment)} · ${segment.street}` : '' };
+      const segmentLabel = segment ? `${segmentCode(segment)} · ${segment.street}` : (report.placeName ?? 'Ponto marcado no mapa');
+      return { ...report, segment, segmentLabel };
     });
   }, [data]);
 

@@ -51,3 +51,33 @@ export function pathMidpoint(path) {
   const [a, b] = [path[mid], path[mid + 1]];
   return [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
 }
+
+/** Até esta distância, um ponto marcado no mapa é considerado "sobre" um trecho salvo. */
+export const SNAP_DISTANCE_M = 40;
+/** Até esta distância, um relato feito por localização entra na avaliação de um trecho. */
+export const ATTACH_DISTANCE_M = 25;
+
+/**
+ * Liga relatos aos trechos de uma rota.
+ * - relato de um destes trechos: fica como está;
+ * - relato com localização a até `maxDistanceM` de um destes trechos: passa a valer para o mais próximo
+ *   (assim, um relato feito em qualquer ponto aparece em toda rota que passar por ali, inclusive rotas
+ *   calculadas depois, e rotas que compartilham a mesma rua compartilham os relatos);
+ * - os demais ficam de fora.
+ * Não altera os relatos recebidos.
+ */
+export function attachReportsToSegments(reports, segments, maxDistanceM = ATTACH_DISTANCE_M) {
+  const ids = new Set(segments.map((s) => s.id));
+  const attached = [];
+  for (const report of reports) {
+    if (ids.has(report.segmentId)) {
+      attached.push(report);
+      continue;
+    }
+    const loc = report.location;
+    if (!loc || !Number.isFinite(Number(loc.lat))) continue;
+    const near = nearestSegment([Number(loc.lat), Number(loc.lon)], segments, maxDistanceM);
+    if (near) attached.push({ ...report, segmentId: near.segment.id, attachedBy: 'location' });
+  }
+  return attached;
+}

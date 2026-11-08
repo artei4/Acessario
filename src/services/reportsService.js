@@ -3,6 +3,7 @@ import { api } from '../api/client.js';
 export const reportsService = {
   listBySegments: (segmentIds) =>
     segmentIds.length === 0 ? Promise.resolve([]) : api.get('/reports', { segmentId: segmentIds }),
+  listAll: () => api.get('/reports'),
   listByUser: (userId) => api.get('/reports', { userId, _sort: 'createdAt', _order: 'desc' }),
   getById: (id) => api.get(`/reports/${encodeURIComponent(id)}`),
   create: (report) => api.post('/reports', { ...report, createdAt: report.createdAt ?? new Date().toISOString() }),

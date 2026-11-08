@@ -68,4 +68,16 @@ export const geocodingService = {
       return true;
     });
   },
+
+  /** Nome do lugar num ponto do mapa (busca reversa). Devolve null se não encontrar. */
+  async reverse(lat, lon) {
+    try {
+      const response = await fetch(`${config.geocodingUrl}/reverse?${new URLSearchParams({ lat: String(lat), lon: String(lon), limit: '1' })}`);
+      if (!response.ok) return null;
+      const [feature] = (await response.json()).features ?? [];
+      return feature ? fromPhotonFeature(feature) : null;
+    } catch {
+      return null; // o nome é um extra: sem ele, o relato é salvo com as coordenadas
+    }
+  },
 };
