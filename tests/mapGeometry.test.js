@@ -1,11 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { framePoints, fromLatLng, labelPoint, pointsKey, toLatLng } from '../src/components/map/mapGeometry.js';
+import { framePoints, fromLatLng, labelPoint, pointsKey } from '../src/components/map/mapGeometry.js';
 
-test('converte [lat, lon] para o formato do Google Maps e de volta', () => {
-  assert.deepEqual(toLatLng([-22.96, -43.18]), { lat: -22.96, lng: -43.18 });
+test('converte o L.LatLng do Leaflet para [lat, lon]', () => {
   assert.deepEqual(fromLatLng({ lat: -22.96, lng: -43.18 }), [-22.96, -43.18]);
-  assert.deepEqual(fromLatLng({ lat: () => 1, lng: () => 2 }), [1, 2], 'aceita google.maps.LatLng');
 });
 
 test('enquadra o foco quando existe; senão, rotas e marcadores', () => {

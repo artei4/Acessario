@@ -4,7 +4,7 @@ Aplicativo web (React) que encontra rotas a pé considerando a **acessibilidade*
 
 > Os dados de demonstração cobrem o trajeto **Rua Siqueira Campos (Copacabana) ↔ Shopping Rio Sul (Botafogo)**. Todas as informações são fictícias.
 
-**Stack:** React 19 · Vite · Tailwind CSS v4 · Google Maps JavaScript API · API REST em Node (local) / Vercel Functions + Vercel Blob (produção).
+**Stack:** React 19 · Vite · Tailwind CSS v4 · OpenStreetMap + Leaflet · API REST em Node (local) / Vercel Functions + Vercel Blob (produção).
 
 ---
 
@@ -12,7 +12,7 @@ Aplicativo web (React) que encontra rotas a pé considerando a **acessibilidade*
 
 1. [Telas](#telas)
 2. [Como rodar](#como-rodar)
-3. [Google Maps](#google-maps)
+3. [Mapa (OpenStreetMap)](#mapa-openstreetmap)
 4. [Publicação na Vercel](#publicação-na-vercel)
 5. [Funcionalidades](#funcionalidades)
 6. [Arquitetura](#arquitetura)
@@ -47,14 +47,14 @@ Requisitos: **Node.js 20+**.
 
 ```bash
 npm install
-cp .env.example .env   # opcional: coloque aqui a chave do Google Maps
+cp .env.example .env   # opcional: nenhuma chave é necessária
 npm run api:reset      # cria server/db.json com os dados de demonstração
 npm start              # sobe a API (porta 3001) e o app (porta 5173) juntos
 ```
 
 Abra <http://localhost:5173>. Na primeira vez, o app pede o perfil de mobilidade (tela 1).
 
-Sem chave do Google Maps, o app funciona normalmente com um **mapa esquemático** em SVG. Veja [Google Maps](#google-maps) para usar o mapa real.
+O mapa do OpenStreetMap funciona direto, sem chave nem cadastro.
 
 ### Sem servidor (modo demonstração)
 
@@ -68,8 +68,7 @@ O mesmo núcleo REST da API (`shared/restCore.js`) roda dentro do navegador e os
 
 | Variável | Padrão | Para que serve |
 |---|---|---|
-| `VITE_GOOGLE_MAPS_API_KEY` | — | Chave da Google Maps JavaScript API. Sem ela, mapa esquemático |
-| `VITE_GOOGLE_MAPS_MAP_ID` | `DEMO_MAP_ID` | Map ID do Google Cloud (marcadores avançados e tema escuro) |
+| `VITE_MAP_PROVIDER` | `osm` | `osm` usa o OpenStreetMap; `schematic` usa o mapa esquemático, sem internet |
 | `VITE_API_MODE` | `http` | `http` usa a API REST; `local` roda tudo no navegador |
 | `VITE_API_URL` | `http://localhost:3001` em desenvolvimento, `/api` publicado | Endereço da API REST |
 | `VITE_USER_ID` | `u-jose` | Usuário da demonstração (não há login) |
@@ -89,29 +88,29 @@ O mesmo núcleo REST da API (`shared/restCore.js`) roda dentro do navegador e os
 
 ---
 
-## Google Maps
+## Mapa (OpenStreetMap)
 
-O mapa usa a **Google Maps JavaScript API**, carregada pelo carregador oficial do Google ("Dynamic Library Import") em `src/services/googleMapsLoader.js`.
-
-### Como obter a chave
-
-1. No [Google Cloud Console](https://console.cloud.google.com/), crie um projeto (ou use um existente) e ative o faturamento. A API tem cota mensal gratuita.
-2. Em **APIs e serviços → Biblioteca**, ative a **Maps JavaScript API**.
-3. Em **APIs e serviços → Credenciais**, crie uma **chave de API**.
-4. **Restrinja a chave**: em "Restrições de aplicativo", escolha *Referenciadores HTTP* e adicione `http://localhost:5173/*` e `https://acessario.vercel.app/*`. Em "Restrições de API", deixe só a Maps JavaScript API. A chave fica visível no navegador, então a restrição é o que impede o uso por outros sites.
-5. (Opcional) Em **Google Maps Platform → Gerenciamento de mapas**, crie um **Map ID** do tipo JavaScript. `DEMO_MAP_ID` funciona para desenvolvimento.
-6. Coloque a chave em `.env` (`VITE_GOOGLE_MAPS_API_KEY=...`) e, na Vercel, em *Settings → Environment Variables*.
+O mapa usa o **OpenStreetMap** com a biblioteca **Leaflet**. É gratuito, não pede chave nem cartão, e funciona assim que o app abre.
 
 ### O que o mapa faz
 
-- Cada trecho da rota é uma `google.maps.Polyline` colorida pela acessibilidade: verde (boa), laranja (com limitações), vermelha (dificuldade alta) e cinza tracejada (não verificado).
-- Origem, destino, números dos trechos e rótulos das rotas são `AdvancedMarkerElement`.
+- O mapa-base vem dos tiles públicos do OpenStreetMap, com o crédito obrigatório "© colaboradores do OpenStreetMap" no canto.
+- Cada trecho da rota é uma linha (`L.polyline`) colorida pela acessibilidade: verde (boa), laranja (com limitações), vermelha (dificuldade alta) e cinza tracejada (não verificado).
+- Origem, destino, números dos trechos e números das rotas são marcadores (`L.marker` com `L.divIcon`) estilizados com Tailwind.
 - Na tela 3, tocar numa linha seleciona a rota.
-- Ao relatar (telas 5B e 6), tocar no mapa marca o ponto, e o alfinete (`PinElement`) pode ser arrastado. O app encontra o trecho mais próximo do ponto.
-- No modo escuro, o mapa é recriado com `colorScheme: DARK`.
-- Se a chave faltar ou for recusada (`gm_authFailure`), o app usa o mapa esquemático sem quebrar a tela.
+- Ao relatar (telas 5B e 6), tocar no mapa marca o ponto, e o alfinete pode ser arrastado ou movido com as **setas do teclado**. O app encontra o trecho mais próximo do ponto.
+- **Modo escuro:** o OpenStreetMap só tem tiles claros, então um filtro CSS inverte as cores dos tiles (variável `--map-tile-filter`). Linhas e marcadores ficam em outra camada e mantêm as cores.
+- A busca de endereço em "Contribuir" usa a **Nominatim**, o serviço de busca do próprio OpenStreetMap.
 
-Arquivos: `services/googleMapsLoader.js` (carregamento), `hooks/useGoogleMapsApi.js`, `hooks/useGoogleMap.js` (instância e eventos), `components/map/GoogleRouteMap.jsx` (desenho), `components/map/AccessMap.jsx` (escolhe Google ou esquemático), `components/map/CityMap.jsx` (esquemático).
+Arquivos: `hooks/useLeafletMap.js` (cria o mapa, registra eventos e camadas, e limpa tudo ao sair da tela), `components/map/LeafletRouteMap.jsx` (desenho), `components/map/AccessMap.jsx` (escolhe OpenStreetMap ou esquemático), `components/map/CityMap.jsx` (esquemático).
+
+### Mapa esquemático (sem internet)
+
+Com `VITE_MAP_PROVIDER=schematic`, o app usa um mapa esquemático em SVG que não depende de internet. Ele serve para apresentações sem rede e para a demonstração hospedada no Claude.
+
+### Uso justo dos tiles
+
+Os tiles de `tile.openstreetmap.org` são mantidos por voluntários e aceitam uso leve, como o de um projeto acadêmico, desde que o crédito apareça. Para muito tráfego, o caminho é um provedor de tiles próprio. Basta trocar `OSM_TILES` em `useLeafletMap.js`.
 
 ---
 
@@ -123,13 +122,13 @@ O projeto `acessario` na Vercel publica a branch `main` do GitHub (`artei4/Acess
 - **API:** `api/index.js` é uma **Vercel Function**. O `vercel.json` encaminha `/api/<rota>` para ela, que usa o mesmo núcleo REST do servidor local. O app publicado chama `/api` no mesmo domínio.
 - **Dados:** ficam no **Vercel Blob** (`acessario-dados`). Cada gravação salva uma versão nova do banco (`acessario-db/<data>.json`) e as antigas são apagadas aos poucos. Assim, a leitura nunca pega uma versão em cache. O banco é criado com os dados de demonstração no primeiro acesso.
 - Sem `BLOB_READ_WRITE_TOKEN`, a função guarda os dados só na memória, e eles voltam ao início de tempos em tempos. O cabeçalho `X-AcessaRio-Store` informa qual armazenamento está em uso (`blob` ou `memory`).
-- Para o Google Maps funcionar no site publicado, adicione `VITE_GOOGLE_MAPS_API_KEY` nas variáveis do projeto e publique de novo. O Vite embute a variável no build.
+- Nenhuma variável é necessária para o mapa: o OpenStreetMap funciona no site publicado sem configuração.
 
 ---
 
 ## Funcionalidades
 
-- **Modo claro e escuro**: botão de sol/lua nas telas 1 e 2 e escolha entre Claro, Escuro e Automático em Perfil → Aparência. A escolha fica salva no navegador, e o Google Maps acompanha o tema.
+- **Modo claro e escuro**: botão de sol/lua nas telas 1 e 2 e escolha entre Claro, Escuro e Automático em Perfil → Aparência. A escolha fica salva no navegador, e o mapa acompanha o tema.
 - **Perfil de mobilidade** (cadeirante, mobilidade reduzida, deficiência visual, idoso): muda o peso de cada característica do caminho na nota.
 - **Busca de destino** com sugestões, inversão de origem/destino e resumo dos relatos recentes no trajeto.
 - **Rotas ranqueadas** com nota de 0 a 100, tempo ajustado pelos obstáculos, rota recomendada, rotas com "Atenção" e rotas com "Informações insuficientes".
@@ -164,7 +163,7 @@ O código é dividido em camadas. Cada camada só conhece a de baixo.
 ├──────────────────────────────────────────────────────────────┤
 │ Negócio        src/domain/                                   │  funções puras, testadas
 ├──────────────────────────────────────────────────────────────┤
-│ Dados          src/services/  →  src/api/                    │  API REST, Google Maps, Nominatim
+│ Dados          src/services/  →  src/api/                    │  API REST, Nominatim (OSM)     
 ├──────────────────────────────────────────────────────────────┤
 │ API REST       server/ (local)  ·  api/ (Vercel)  ·  shared/ │  CRUD genérico, validação, cascata
 └──────────────────────────────────────────────────────────────┘
@@ -185,19 +184,18 @@ acessario/
 ├── src/
 │   ├── api/                httpClient, localClient, ApiError, client (escolhe o modo)
 │   ├── services/           usersService, placesService, routesService, reportsService,
-│   │                       searchesService, networkService, geocodingService (Nominatim),
-│   │                       googleMapsLoader (Google Maps JavaScript API)
+│   │                       searchesService, networkService, geocodingService (Nominatim)
 │   ├── domain/             profiles, reportTypes, reportStatus, scoring, geo, summary
 │   ├── hooks/              useAsync, useHashRouter, useRouteOptions, useRouteDetail,
 │   │                       useReportActions, useMyReports, useContribution, usePlaces,
 │   │                       useRecentSearches, useGeocoding, usePhotoPicker, useEvaluationContext,
-│   │                       useGoogleMapsApi, useGoogleMap
+│   │                       useLeafletMap (mapa, eventos e camadas do Leaflet)
 │   ├── context/            UserContext (usuário + atualização otimista), ThemeContext, ToastContext
 │   ├── components/
 │   │   ├── ui/             Button, Badge, Card/Notice, Field, Icon, IconButton, Toggle, Tabs,
 │   │   │                   ChoiceGrid, ScoreRing, Modal, PhotoField, ThemeToggle, States
 │   │   ├── layout/         AppShell/Page/Bleed, TopBar, BottomNav, RioScene
-│   │   ├── map/            AccessMap, GoogleRouteMap, CityMap (esquemático), MapFrame,
+│   │   ├── map/            AccessMap, LeafletRouteMap, CityMap (esquemático), MapFrame,
 │   │   │                   mapAdapters, mapGeometry, projection
 │   │   ├── routes/         RouteCard, SegmentDetail, PlaceInput
 │   │   └── reports/        ReportVoteCard, NewReportForm, ContributeForm, LocationPicker…
@@ -214,8 +212,8 @@ acessario/
 - **Custom hooks como fronteira.** As páginas não chamam a API nem calculam notas: chamam hooks como `useRouteOptions(origem, destino)`, que buscam os dados pelos serviços e aplicam as regras do domínio com `useMemo`. Trocar o perfil recalcula as notas sem nova requisição.
 - **Domínio puro.** `src/domain/` não importa React nem a API; recebe dados e devolve avaliações. Por isso é testável com `node --test`, sem navegador.
 - **Um núcleo REST, três lugares.** `shared/restCore.js` roda no servidor local, na Vercel Function e no navegador (modo demonstração). Só muda onde o banco é guardado (`server/stores.js`).
-- **Mapa intercambiável.** `AccessMap` recebe trechos em `[lat, lon]` e escolhe entre o Google Maps e o esquemático. As páginas não sabem qual dos dois está na tela.
-- **Google Maps fora do React.** O mapa e os overlays (linhas e marcadores) são objetos do Google. Os hooks `useGoogleMap` e `useMapListener` criam e limpam esses objetos nos efeitos, evitando vazamentos ao trocar de tela.
+- **Mapa intercambiável.** `AccessMap` recebe trechos em `[lat, lon]` e escolhe entre o OpenStreetMap e o esquemático. As páginas não sabem qual dos dois está na tela.
+- **Leaflet fora do React.** O mapa, as linhas e os marcadores são objetos do Leaflet. O hook `useLeafletMap` cria o mapa, `useLayerGroup` agrupa os desenhos de cada efeito e `useMapEvent` registra eventos. Tudo é limpo nos efeitos, evitando vazamentos ao trocar de tela.
 - **Atualização otimista** no usuário (preferências e perfil) e nas buscas recentes, com volta ao estado anterior se a API falhar.
 - **Respostas atrasadas são descartadas** em `useAsync`, evitando que uma rota antiga sobrescreva a atual.
 
@@ -271,7 +269,7 @@ Os atributos dos trechos representam o levantamento base (a proposta do projeto 
 
 ### APIs externas
 
-- **Google Maps JavaScript API**: mapa, linhas e marcadores (ver [Google Maps](#google-maps)).
+- **OpenStreetMap**: tiles do mapa-base (ver [Mapa](#mapa-openstreetmap)).
 - **Nominatim (OpenStreetMap)**: busca de endereço em "Contribuir com o mapa", limitada a Botafogo/Copacabana. A busca só acontece quando a pessoa clica em "Buscar", respeitando o limite de 1 requisição por segundo.
 
 ---
@@ -323,7 +321,7 @@ Depois, cada relato ativo soma (facilidade) ou subtrai (obstáculo) seus pontos 
 npm test
 ```
 
-26 testes com `node:test` cobrem: ciclo de status dos relatos, desatualização, peso dos relatos, bloqueio por perfil, preferência por rotas planas, impacto de um relato na nota, ranqueamento com os dados de demonstração, rota no sentido inverso, CRUD/validação/cascata da API, leitura de rotas da Vercel Function, armazenamento no Blob (com um Blob simulado), conversão de coordenadas para o Google Maps e localização do trecho mais próximo.
+26 testes com `node:test` cobrem: ciclo de status dos relatos, desatualização, peso dos relatos, bloqueio por perfil, preferência por rotas planas, impacto de um relato na nota, ranqueamento com os dados de demonstração, rota no sentido inverso, CRUD/validação/cascata da API, leitura de rotas da Vercel Function, armazenamento no Blob (com um Blob simulado), enquadramento do mapa e localização do trecho mais próximo.
 
 ---
 
@@ -331,7 +329,7 @@ npm test
 
 - Alvos de toque com no mínimo 44 px; foco visível em todos os controles.
 - Formulários com rótulos, mensagens de erro anunciadas (`role="alert"`) e avisos em região viva.
-- Abas navegáveis por setas; combobox de lugares com teclado. No mapa esquemático, o marcador se move com as setas; no Google Maps, o alfinete arrastável também aceita teclado.
+- Abas navegáveis por setas; combobox de lugares com teclado. No mapa de escolha de ponto, o alfinete se move com as setas do teclado.
 - Cor nunca é a única informação: status sempre vem escrito (ex.: "Em confirmação"), e trechos não verificados são tracejados.
 - Modo escuro com contraste ajustado; respeita `prefers-reduced-motion`.
 
@@ -340,7 +338,7 @@ npm test
 ## Limitações e próximos passos
 
 - Não há autenticação: o usuário é fixo (`VITE_USER_ID`).
-- As rotas são pré-cadastradas. A **Directions API** do Google (modo `WALKING`) poderia gerar rotas para qualquer par de endereços, com as regras de acessibilidade aplicadas por cima.
+- As rotas são pré-cadastradas. Um roteador do ecossistema OpenStreetMap (OSRM ou GraphHopper com perfil a pé) poderia gerar rotas para qualquer par de endereços, com as regras de acessibilidade aplicadas por cima. O OpenStreetMap também tem etiquetas de acessibilidade (`wheelchair`, `incline`, `surface`, `kerb`) que poderiam alimentar a nota.
 - O banco no Vercel Blob é um arquivo JSON público com nome difícil de adivinhar. Funciona para a demonstração; com usuários reais, o ideal é um banco de dados (ex.: Postgres) e fotos em armazenamento privado.
 - Duas gravações exatamente ao mesmo tempo em instâncias diferentes da função: vale a última.
 - A coleta automática por câmeras e visão computacional, prevista no projeto, está representada apenas pelos atributos dos trechos (`surveyedAt`).

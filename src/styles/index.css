@@ -125,6 +125,7 @@
   --skeleton-b: #f7f9fc;
   --logo-accent: #4ade80;
   --scene-brightness: 1;
+  --map-tile-filter: none;
   color-scheme: light;
 }
 
@@ -175,6 +176,7 @@
     --skeleton-a: #141d31;
     --skeleton-b: #1c2741;
     --scene-brightness: 0.62;
+    --map-tile-filter: invert(1) hue-rotate(180deg) brightness(0.85) contrast(0.9) saturate(0.6);
     color-scheme: dark;
   }
 }
@@ -224,6 +226,7 @@
   --skeleton-a: #141d31;
   --skeleton-b: #1c2741;
   --scene-brightness: 0.62;
+  --map-tile-filter: invert(1) hue-rotate(180deg) brightness(0.85) contrast(0.9) saturate(0.6);
   color-scheme: dark;
 }
 
@@ -247,15 +250,30 @@
   }
 }
 
-/* Marcadores HTML desenhados dentro do Google Maps (fora da árvore do React). */
+/* Marcadores do mapa OpenStreetMap (HTML criado pelo Leaflet, fora da árvore do React). */
 @layer components {
-  .gm-dot {
+  .marker-dot {
     @apply size-3.5 rounded-full border-2 border-white shadow-soft;
   }
-  .gm-number {
+  .marker-dot--origin {
+    @apply bg-[#15803d];
+  }
+  .marker-dot--destination {
+    @apply bg-[#dc2626];
+  }
+  .marker-number {
     @apply grid size-[22px] place-items-center rounded-full border-2 border-white bg-navy text-[11px] font-bold text-on-navy shadow-soft;
   }
-  .gm-route-label {
+  .marker-route-label {
     @apply grid size-[22px] place-items-center rounded-full border-2 border-ink bg-surface text-[11px] font-bold text-ink shadow-soft;
   }
+}
+
+/* Mapa-base no modo escuro: o OpenStreetMap só tem tiles claros, então invertemos as cores dos tiles
+   (as linhas das rotas e os marcadores ficam em outra camada e mantêm as cores). */
+.leaflet-tile-pane {
+  filter: var(--map-tile-filter);
+}
+.leaflet-container {
+  @apply bg-map-land font-sans;
 }

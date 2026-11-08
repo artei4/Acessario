@@ -15,7 +15,7 @@ export const LEVEL_LABELS = {
 };
 
 /**
- * Moldura comum aos dois mapas (Google e esquemático): proporção, borda,
+ * Moldura comum aos dois mapas (OpenStreetMap e esquemático): proporção, borda,
  * legenda e conteúdo sobreposto (dicas, botões).
  */
 export function MapFrame({ aspect = 1.6, bleed = false, picker = false, showLegend = false, legendPosition = 'left', className, overlay, children }) {
@@ -29,7 +29,8 @@ export function MapFrame({ aspect = 1.6, bleed = false, picker = false, showLege
       )}
       style={{ aspectRatio: aspect }}
     >
-      {children}
+      {/* isolate: os z-index internos do Leaflet (até 1000) ficam presos aqui, abaixo da legenda e da barra inferior */}
+      <div className="relative isolate z-0 size-full">{children}</div>
       {showLegend && <MapLegend position={legendPosition} />}
       {overlay}
     </div>

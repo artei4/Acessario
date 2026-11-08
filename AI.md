@@ -79,10 +79,21 @@ A pessoa pediu: o servidor de volta, o mapa do **Google Maps** (Maps JavaScript 
 - Botões com contorno perderam a borda porque `border-transparent` (base) e `border-brand` (variante) competiam. Cada variante passou a definir a própria cor de borda.
 - O mapa de escolha de ponto reenquadrava a cada toque, porque o alfinete entrava no enquadramento. Passou a enquadrar a área mapeada.
 
+## Quarta rodada: troca para OpenStreetMap
+
+A pessoa perguntou se teria que pagar pelo Google Cloud. A IA pesquisou os preços: são 10.000 carregamentos grátis por mês, mas o Google exige cartão de crédito cadastrado. Ela apresentou o OpenStreetMap como alternativa sem custo, e a pessoa escolheu trocar.
+
+- Saíram o carregador do Google, os hooks `useGoogleMapsApi`/`useGoogleMap` e o `GoogleRouteMap`.
+- Entraram o hook `useLeafletMap` (com `useMapEvent` e `useLayerGroup`) e o componente `LeafletRouteMap`, com as mesmas props. Assim, as páginas não mudaram: o `AccessMap` só passou a escolher o OpenStreetMap.
+- O modo escuro usa um filtro CSS nos tiles, porque o OpenStreetMap não tem tiles escuros.
+- O alfinete passou a se mover com as setas do teclado também no mapa real.
+- O pacote `leaflet` não pôde ser instalado aqui. A IA criou um Leaflet simulado e confirmou que o app desenha 12 linhas (2 tracejadas) na tela 3, seleciona a rota ao tocar na linha, marca o ponto por clique, arraste e setas, destrói o mapa ao sair da tela, usa os tiles do OpenStreetMap com o crédito obrigatório e aplica o filtro no modo escuro.
+- Durante a troca, um script de substituição corrompeu o `src/config/env.js`. A IA restaurou o arquivo pelo git e refez a edição.
+
 ## Limitações do ambiente
 
 - O ambiente onde o código foi gerado **não tinha acesso à internet para `npm install`**. O projeto não foi executado com o Vite em si: foi validado com esbuild e com o compilador do Tailwind v4 chamado diretamente, mais Playwright. Ao rodar `npm install && npm start` pela primeira vez, vale conferir se as versões em `package.json` resolvem sem conflito.
-- O **Google Maps real** não pôde ser carregado aqui (só a versão simulada). Na primeira execução com uma chave verdadeira, vale olhar o mapa nas telas 3, 4, 5B e 6.
+- O **Leaflet real** e os tiles do OpenStreetMap não puderam ser carregados aqui (só a versão simulada). Na primeira execução, vale olhar o mapa nas telas 3, 4, 5B e 6, no claro e no escuro.
 - O pacote `@vercel/blob` não pôde ser instalado. O código usa só `put`, `list` e `del`, que são documentados, mas a gravação real no Blob só pode ser conferida no site publicado (cabeçalho `X-AcessaRio-Store: blob`).
 - A integração com a **Nominatim** não pôde ser chamada a partir do ambiente de teste. O código trata falha de rede com mensagem e o mapa continua funcionando por toque.
 
@@ -92,7 +103,6 @@ A pessoa pediu: o servidor de volta, o mapa do **Google Maps** (Maps JavaScript 
 - **Limiares** de confirmação (5 votos), desatualização (30 dias) e validade do levantamento (180 dias).
 - **Dados**: todas as ruas, medidas e relatos são fictícios; as coordenadas são aproximadas.
 - **Privacidade**: fotos e localização dos relatos ficam no banco sem moderação nem remoção de metadados. Na Vercel, o banco é um arquivo público no Blob (com nome difícil de adivinhar).
-- **Chave do Google Maps**: precisa de restrição por domínio no Google Cloud, porque fica visível no navegador.
 
 ## Como a IA deve ser usada daqui em diante
 

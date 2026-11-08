@@ -1,9 +1,7 @@
-/** Conversões entre o formato do app ([lat, lon]) e o do Google Maps ({ lat, lng }). */
+/** Utilitários de geometria do mapa. O app usa [lat, lon], que o Leaflet aceita direto. */
 
-export const toLatLng = ([lat, lon]) => ({ lat, lng: lon });
-
-export const fromLatLng = (latLng) =>
-  typeof latLng.lat === 'function' ? [latLng.lat(), latLng.lng()] : [latLng.lat, latLng.lng];
+/** Converte um L.LatLng ({ lat, lng }) para o formato do app. */
+export const fromLatLng = (latLng) => [latLng.lat, latLng.lng];
 
 /** Todos os pontos que o mapa deve enquadrar: o foco, se houver, ou rotas + marcadores. */
 export function framePoints({ focus, routes = [], markers = [] }) {
