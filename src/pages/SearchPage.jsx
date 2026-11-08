@@ -4,6 +4,7 @@ import { Badge } from '../components/ui/Badge.jsx';
 import { Icon } from '../components/ui/Icon.jsx';
 import { PlaceInput } from '../components/routes/PlaceInput.jsx';
 import { RioScene } from '../components/layout/RioScene.jsx';
+import { ThemeToggleButton } from '../components/ui/ThemeToggle.jsx';
 import { useCurrentUser } from '../context/UserContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import { usePlaces } from '../hooks/usePlaces.js';
@@ -69,9 +70,12 @@ export function SearchPage({ navigate }) {
 
   return (
     <div className="page">
-      <div className="stack" style={{ gap: 2 }}>
-        <p className="muted" style={{ margin: 0 }}>Olá, {user.name}</p>
-        <h1 className="headline">Para onde vamos?</h1>
+      <div className="row row--between" style={{ flexWrap: 'nowrap', alignItems: 'flex-start' }}>
+        <div className="stack" style={{ gap: 2 }}>
+          <p className="muted" style={{ margin: 0 }}>Olá, {user.name}</p>
+          <h1 className="headline">Para onde vamos?</h1>
+        </div>
+        <ThemeToggleButton />
       </div>
 
       <form className="stack" onSubmit={handleSubmit}>

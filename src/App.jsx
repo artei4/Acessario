@@ -56,8 +56,8 @@ export function App() {
           <ErrorState error={error} onRetry={reload} />
           {config.apiMode === 'http' && (
             <p className="notice small">
-              Rode <code>npm run api</code> em outro terminal (API em {config.apiUrl}) ou use{' '}
-              <code>VITE_API_MODE=local</code> no arquivo <code>.env</code> para testar sem servidor.
+              O modo servidor está ligado, mas a API em {config.apiUrl} não respondeu. Rode{' '}
+              <code>npm run dev:http</code>, ou use apenas <code>npm run dev</code> para o app funcionar sem servidor.
             </p>
           )}
         </div>

@@ -49,6 +49,13 @@ A IA não acertou tudo de primeira. Ajustes feitos após testar:
 - **Ordem em "Confirmar relato"**: o primeiro cartão destacado era um relato do próprio usuário; agora vêm primeiro relatos de outras pessoas no trecho atual.
 - **Teste automatizado** clicava no título do modal em vez do botão "Excluir"; corrigido o seletor (o app estava certo).
 
+## Segunda rodada de pedidos
+
+Depois de testar, a pessoa pediu:
+
+1. **Não depender de servidor por enquanto.** O app abria com "Não foi possível falar com o servidor" porque o modo padrão era `http`. O padrão passou a ser `local` (núcleo REST no navegador, com `localStorage`); o modo servidor continua disponível com `npm run dev:http`.
+2. **Escolher entre modo claro e escuro.** Foi criado `ThemeContext` (claro, escuro ou automático, salvo no navegador), um botão de sol/lua nas telas 1 e 2 e a seção "Aparência" no Perfil. Para isso, as cores fixas do CSS e do mapa foram trocadas por variáveis, e o tema escuro redefine só essas variáveis. As telas foram conferidas no escuro por captura de tela.
+
 ## Limitações do ambiente
 
 - O ambiente onde o código foi gerado **não tinha acesso à internet para `npm install`**. Por isso o projeto não foi executado com o Vite em si: foi validado com esbuild (que compila o mesmo código) e Playwright. Ao rodar `npm install && npm start` pela primeira vez, vale conferir se as versões em `package.json` resolvem sem conflito.

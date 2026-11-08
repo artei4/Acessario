@@ -42,17 +42,20 @@ Requisitos: **Node.js 20+**.
 
 ```bash
 npm install
-npm run api:reset   # cria server/db.json com os dados de demonstração
-npm start           # sobe a API (porta 3001) e o front (porta 5173) juntos
+npm run dev
 ```
 
 Abra <http://localhost:5173>. Na primeira vez, o app pede o perfil de mobilidade (tela 1).
 
-Para subir separadamente:
+**Não é preciso subir servidor.** Por padrão o app roda no modo `local`: o mesmo núcleo REST da API (`shared/restCore.js`) é executado dentro do navegador e os dados ficam salvos no `localStorage`. Todas as telas e funções (criar, editar, excluir e votar em relatos, preferências, buscas recentes) funcionam assim. No Perfil, "Restaurar dados de demonstração" volta ao estado inicial.
+
+### Modo servidor (opcional)
+
+Para usar a API REST de verdade em `server/`:
 
 ```bash
-npm run api   # API REST em http://localhost:3001
-npm run dev   # front em http://localhost:5173
+npm run api:reset   # cria server/db.json com os dados de demonstração
+npm run dev:http    # sobe a API (porta 3001) e o front em modo http
 ```
 
 ### Variáveis de ambiente
@@ -62,15 +65,15 @@ Copie `.env.example` para `.env` se quiser mudar algo:
 | Variável | Padrão | Para que serve |
 |---|---|---|
 | `VITE_API_URL` | `http://localhost:3001` | Endereço da API REST |
-| `VITE_API_MODE` | `http` | `http` usa a API; `local` roda o mesmo núcleo REST dentro do navegador (localStorage), útil para demonstrar sem servidor |
+| `VITE_API_MODE` | `local` | `local` roda tudo no navegador (localStorage), sem servidor; `http` usa a API REST de `server/` |
 | `VITE_USER_ID` | `u-jose` | Usuário da demonstração (não há login) |
 
 ### Scripts
 
 | Script | O que faz |
 |---|---|
-| `npm start` | API + front ao mesmo tempo |
-| `npm run dev` | Só o front (Vite) |
+| `npm run dev` / `npm start` | Abre o app (modo local, sem servidor) |
+| `npm run dev:http` | API REST + app em modo servidor |
 | `npm run api` | Só a API REST |
 | `npm run api:reset` | Recria o banco com os dados de demonstração (datas relativas a hoje) |
 | `npm test` | Testes das regras de negócio e da API (`node:test`, sem dependências) |
@@ -80,6 +83,7 @@ Copie `.env.example` para `.env` se quiser mudar algo:
 
 ## Funcionalidades
 
+- **Modo claro e escuro**: botão de sol/lua nas telas 1 e 2 e escolha entre Claro, Escuro e Automático (segue o aparelho) em Perfil → Aparência. A escolha fica salva no navegador.
 - **Perfil de mobilidade** (cadeirante, mobilidade reduzida, deficiência visual, idoso): muda o peso de cada característica do caminho na nota.
 - **Busca de destino** com sugestões, inversão de origem/destino e resumo dos relatos recentes no trajeto.
 - **Rotas ranqueadas** com nota de 0 a 100, tempo ajustado pelos obstáculos, rota recomendada, rotas com "Atenção" e rotas com "Informações insuficientes".
@@ -136,7 +140,7 @@ acessario/
 │   ├── hooks/              useAsync, useHashRouter, useRouteOptions, useRouteDetail,
 │   │                       useReportActions, useMyReports, useContribution, usePlaces,
 │   │                       useRecentSearches, useGeocoding, usePhotoPicker, useEvaluationContext
-│   ├── context/            UserContext (usuário + atualização otimista), ToastContext
+│   ├── context/            UserContext (usuário + atualização otimista), ThemeContext, ToastContext
 │   ├── components/
 │   │   ├── ui/             Button, Badge, Icon, Toggle, Tabs, ChoiceGrid, ScoreRing, Modal…
 │   │   ├── layout/         TopBar, BottomNav, RioScene
@@ -157,6 +161,7 @@ acessario/
 - **Domínio puro.** `src/domain/` não importa React nem a API; recebe dados e devolve avaliações. Por isso é testável com `node --test`, sem navegador.
 - **Um núcleo REST para dois modos.** `shared/restCore.js` é o mesmo código no servidor e no modo `local`, então a demonstração sem servidor se comporta exatamente como a API.
 - **Sem bibliotecas de roteamento ou mapa.** Roteamento por hash (`useHashRouter`, com `useSyncExternalStore`) e mapa esquemático em SVG mantêm o projeto pequeno. `CityMap` recebe trechos em `[lat, lon]`, então trocá-lo por Leaflet/MapLibre não afeta o resto.
+- **Tema por tokens.** Todas as cores são variáveis CSS em `:root`; o tema escuro só redefine essas variáveis. `ThemeContext` grava a escolha em `data-theme` no `<html>` e, no modo Automático, o CSS segue `prefers-color-scheme`.
 - **Atualização otimista** no usuário (preferências e perfil) e nas buscas recentes, com volta ao estado anterior se a API falhar.
 - **Respostas atrasadas são descartadas** em `useAsync`, evitando que uma rota antiga sobrescreva a atual.
 
@@ -264,6 +269,7 @@ npm test
 - Abas navegáveis por setas; combobox de lugares com teclado; o marcador do mapa se move com as setas.
 - Cor nunca é a única informação: status sempre vem escrito (ex.: "Em confirmação").
 - Respeita `prefers-reduced-motion`.
+- Modo escuro com contraste ajustado: no escuro, o texto sobre botões primários fica escuro, porque o azul do botão é mais claro.
 
 ---
 

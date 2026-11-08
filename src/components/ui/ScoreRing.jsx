@@ -16,7 +16,7 @@ export function ScoreRing({ score, size = 52, level = scoreLevel(score) }) {
   return (
     <div className="score-ring" style={{ width: size, height: size }} role="img" aria-label={score === null ? 'Sem nota' : `Nota ${score} de 100`}>
       <svg width={size} height={size} aria-hidden="true">
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#e5e9f0" strokeWidth={stroke} />
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--track)" strokeWidth={stroke} />
         <circle
           cx={size / 2}
           cy={size / 2}

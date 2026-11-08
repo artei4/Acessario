@@ -4,6 +4,7 @@ import { Button } from '../components/ui/Button.jsx';
 import { Icon } from '../components/ui/Icon.jsx';
 import { Modal } from '../components/ui/Modal.jsx';
 import { Toggle } from '../components/ui/Toggle.jsx';
+import { ThemeSelector } from '../components/ui/ThemeToggle.jsx';
 import { ErrorState, LoadingState } from '../components/ui/States.jsx';
 import { MyReportItem } from '../components/reports/MyReportItem.jsx';
 import { ContributeForm } from '../components/reports/ContributeForm.jsx';
@@ -122,6 +123,12 @@ export function ProfilePage({ query, navigate }) {
             onChange={(value) => togglePreference(pref.key, value)}
           />
         ))}
+      </section>
+
+      <section className="card stack" style={{ gap: 8 }} aria-labelledby="theme-title">
+        <h2 id="theme-title" className="section-title">Aparência</h2>
+        <ThemeSelector />
+        <p className="tiny muted" style={{ margin: 0 }}>Automático segue o tema do seu aparelho.</p>
       </section>
 
       <div className="profile-columns">

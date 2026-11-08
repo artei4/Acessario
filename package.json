@@ -6,12 +6,13 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "api": "node server/index.js",
-    "api:reset": "node server/reset.js",
-    "start": "concurrently -k -n api,web \"npm run api\" \"npm run dev\"",
+    "start": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "node --test \"tests/**/*.test.js\""
+    "test": "node --test \"tests/**/*.test.js\"",
+    "api": "node server/index.js",
+    "api:reset": "node server/reset.js",
+    "dev:http": "concurrently -k -n api,web \"npm run api\" \"vite --mode http\""
   },
   "dependencies": {
     "react": "^19.2.0",

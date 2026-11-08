@@ -113,7 +113,7 @@ export function CityMap({
         <rect x={viewBox.x - 500} y={viewBox.y - 500} width={viewBox.width + 1000} height={viewBox.height + 1000} fill="var(--map-land)" />
         <polygon points={toPoints(SEA)} fill="var(--map-water)" />
         <polygon points={toPoints(BAY)} fill="var(--map-water)" />
-        <polygon points={toPoints(HILL)} fill="var(--map-hill)" stroke="#b8d3ad" strokeWidth={scale} />
+        <polygon points={toPoints(HILL)} fill="var(--map-hill)" stroke="var(--map-hill-stroke)" strokeWidth={scale} />
         {STREETS.map((street, i) => (
           <polyline key={i} points={toPoints(street)} fill="none" stroke="var(--map-street)" strokeWidth={9 * scale} strokeLinecap="round" strokeLinejoin="round" />
         ))}
@@ -141,7 +141,7 @@ export function CityMap({
               {route.segments.map((segment) => (
                 <g key={segment.id}>
                   {segment.id === highlightSegmentId && (
-                    <polyline points={toPoints(segment.path)} fill="none" stroke="#1a56db" strokeOpacity="0.35" strokeWidth={width + 8 * scale} strokeLinecap="round" />
+                    <polyline points={toPoints(segment.path)} fill="none" stroke="var(--blue)" strokeOpacity="0.35" strokeWidth={width + 8 * scale} strokeLinecap="round" />
                   )}
                   <polyline
                     points={toPoints(segment.path)}
@@ -158,8 +158,8 @@ export function CityMap({
               ))}
               {route.label && (
                 <g transform={`translate(${lx} ${ly})`}>
-                  <circle r={8 * scale} fill="#fff" stroke="#334155" strokeWidth={1.5 * scale} />
-                  <text fontSize={9 * scale} fontWeight="700" textAnchor="middle" dy={3 * scale} fill="#0f1b33">
+                  <circle r={8 * scale} fill="var(--map-marker-bg)" stroke="var(--map-marker-fg)" strokeWidth={1.5 * scale} />
+                  <text fontSize={9 * scale} fontWeight="700" textAnchor="middle" dy={3 * scale} fill="var(--map-marker-fg)">
                     {route.label}
                   </text>
                 </g>

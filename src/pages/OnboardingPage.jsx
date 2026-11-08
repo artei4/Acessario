@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Button } from '../components/ui/Button.jsx';
 import { Icon } from '../components/ui/Icon.jsx';
+import { ThemeToggleButton } from '../components/ui/ThemeToggle.jsx';
 import { PROFILE_LIST } from '../domain/profiles.js';
 import { useCurrentUser } from '../context/UserContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
@@ -27,6 +28,7 @@ export function OnboardingPage({ navigate }) {
   return (
     <form className="page page--flush page--no-nav" onSubmit={handleSubmit}>
       <header className="hero">
+        <ThemeToggleButton className="theme-button--on-dark" />
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}>
           <Icon name="pin" size={40} strokeWidth={2.2} />
         </div>
