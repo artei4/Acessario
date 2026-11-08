@@ -101,12 +101,22 @@ A pessoa enviou o código ao GitHub e pediu duas coisas: rotas entre quaisquer p
 - **Zoom:** o controle de zoom do Leaflet foi para o canto inferior direito.
 - **Verificação:** fluxo completo no navegador com o servidor local, simulando as respostas da Nominatim e do roteador. Foram conferidos a busca dos dois lugares, a gravação de 1 lugar novo e 2 rotas com trechos, a não repetição do cálculo ao recarregar, o aviso nos trechos novos e um relato gravado num trecho calculado.
 
+## Sexta rodada: sugestões enquanto se digita
+
+A pessoa pediu que, ao digitar "barra", o app já mostrasse opções como BarraShopping e Praia da Barra da Tijuca.
+
+- As regras de uso da Nominatim proíbem autocompletar. Por isso, a busca passou para o **Photon**, um geocodificador do ecossistema OpenStreetMap feito para isso.
+- O hook `useAddressAutocomplete` espera 350 ms sem digitar, cancela a busca anterior (`AbortController`), guarda o cache por termo e mantém as sugestões antigas na tela enquanto carrega.
+- O componente `PlaceSearchBox` (combobox acessível) passou a ser usado na origem/destino e no endereço de "Contribuir". Lá, escolher um endereço move o alfinete e aproxima o mapa.
+- Correção junto: endereços sem nome viravam só o número (ex.: "15900"). Agora aparecem como "Avenida das Américas, 15900".
+- **Verificação:** no navegador, com o Photon simulado, digitar "barra" letra por letra gerou **uma** busca. Apareceram as 3 sugestões, a escolha pelo teclado funcionou, repetir o termo usou o cache, e o alfinete foi para o BarraShopping no formulário de contribuição. 32 testes passando.
+
 ## Limitações do ambiente
 
 - O ambiente onde o código foi gerado **não tinha acesso à internet para `npm install`**. O projeto não foi executado com o Vite em si: foi validado com esbuild e com o compilador do Tailwind v4 chamado diretamente, mais Playwright. Ao rodar `npm install && npm start` pela primeira vez, vale conferir se as versões em `package.json` resolvem sem conflito.
 - O **Leaflet real** e os tiles do OpenStreetMap não puderam ser carregados aqui (só a versão simulada). Na primeira execução, vale olhar o mapa nas telas 3, 4, 5B e 6, no claro e no escuro.
 - O pacote `@vercel/blob` não pôde ser instalado. O código usa só `put`, `list` e `del`, que são documentados, mas a gravação real no Blob só pode ser conferida no site publicado (cabeçalho `X-AcessaRio-Store: blob`).
-- A **Nominatim** e o **roteador OSRM** não puderam ser chamados a partir do ambiente de teste (as respostas foram simuladas no formato documentado). Na primeira busca real, vale conferir um trajeto longo e um curto.
+- O **Photon** e o **roteador OSRM** não puderam ser chamados a partir do ambiente de teste (as respostas foram simuladas no formato documentado). Na primeira busca real, vale conferir um trajeto longo e um curto.
 - A integração com a **Nominatim** não pôde ser chamada a partir do ambiente de teste. O código trata falha de rede com mensagem e o mapa continua funcionando por toque.
 
 ## O que precisa de revisão humana

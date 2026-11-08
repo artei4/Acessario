@@ -100,7 +100,7 @@ O mapa usa o **OpenStreetMap** com a biblioteca **Leaflet**. É gratuito, não p
 - Na tela 3, tocar numa linha seleciona a rota.
 - Ao relatar (telas 5B e 6), tocar no mapa marca o ponto, e o alfinete pode ser arrastado ou movido com as **setas do teclado**. O app encontra o trecho mais próximo do ponto.
 - **Modo escuro:** o OpenStreetMap só tem tiles claros, então um filtro CSS inverte as cores dos tiles (variável `--map-tile-filter`). Linhas e marcadores ficam em outra camada e mantêm as cores.
-- A busca de endereço em "Contribuir" usa a **Nominatim**, o serviço de busca do próprio OpenStreetMap.
+- A busca de endereço em "Contribuir" sugere lugares enquanto se digita (Photon) e aproxima o mapa do lugar escolhido.
 
 Arquivos: `hooks/useLeafletMap.js` (cria o mapa, registra eventos e camadas, e limpa tudo ao sair da tela), `components/map/LeafletRouteMap.jsx` (desenho), `components/map/AccessMap.jsx` (escolhe OpenStreetMap ou esquemático), `components/map/CityMap.jsx` (esquemático).
 
@@ -130,7 +130,7 @@ O projeto `acessario` na Vercel publica a branch `main` do GitHub (`artei4/Acess
 
 - **Modo claro e escuro**: botão de sol/lua nas telas 1 e 2 e escolha entre Claro, Escuro e Automático em Perfil → Aparência. A escolha fica salva no navegador, e o mapa acompanha o tema.
 - **Perfil de mobilidade** (cadeirante, mobilidade reduzida, deficiência visual, idoso): muda o peso de cada característica do caminho na nota.
-- **Busca de destino em todo o Rio**: sugere os lugares já conhecidos e busca qualquer endereço ou lugar da cidade na Nominatim (botão ou Enter). Também tem inversão de origem/destino e resumo dos relatos recentes no trajeto.
+- **Busca de destino em todo o Rio, com sugestões enquanto se digita**: ao digitar "barra", aparecem BarraShopping, Praia da Barra da Tijuca etc. Os lugares já usados aparecem primeiro, e o resto vem do OpenStreetMap (Photon). Setas e Enter escolhem a sugestão. Também tem inversão de origem/destino e resumo dos relatos recentes no trajeto.
 - **Rotas para qualquer trajeto**: sem rota salva entre os dois lugares, o app calcula até 3 caminhos a pé no roteador do OpenStreetMap e grava lugares, rotas e trechos na API. Os trechos novos começam como "não verificados" e ganham nota conforme as pessoas relatam e confirmam o que encontram.
 - **Rotas ranqueadas** com nota de 0 a 100, tempo ajustado pelos obstáculos, rota recomendada, rotas com "Atenção" e rotas com "Informações insuficientes".
 - **Mapa** com cada trecho colorido pela acessibilidade.
@@ -164,7 +164,7 @@ O código é dividido em camadas. Cada camada só conhece a de baixo.
 ├──────────────────────────────────────────────────────────────┤
 │ Negócio        src/domain/                                   │  funções puras, testadas
 ├──────────────────────────────────────────────────────────────┤
-│ Dados          src/services/  →  src/api/                    │  API REST, Nominatim (OSM)     
+│ Dados          src/services/  →  src/api/                    │  API REST, OSRM, Photon (OSM) 
 ├──────────────────────────────────────────────────────────────┤
 │ API REST       server/ (local)  ·  api/ (Vercel)  ·  shared/ │  CRUD genérico, validação, cascata
 └──────────────────────────────────────────────────────────────┘
@@ -185,13 +185,13 @@ acessario/
 ├── src/
 │   ├── api/                httpClient, localClient, ApiError, client (escolhe o modo)
 │   ├── services/           usersService, placesService, routesService, reportsService,
-│   │                       searchesService, networkService, geocodingService (Nominatim),
+│   │                       searchesService, networkService, geocodingService (Photon),
 │   │                       routingService (rotas a pé no OSRM)
 │   ├── domain/             profiles, reportTypes, reportStatus, scoring, geo, summary,
 │   │                       routePlanning (resposta do roteador → rotas e trechos)
 │   ├── hooks/              useAsync, useHashRouter, useRouteOptions, useRouteDetail,
 │   │                       useReportActions, useMyReports, useContribution, usePlaces,
-│   │                       useRecentSearches, useGeocoding, usePhotoPicker, useEvaluationContext,
+│   │                       useRecentSearches, useAddressAutocomplete, usePhotoPicker, useEvaluationContext,
 │   │                       useLeafletMap (mapa, eventos e camadas do Leaflet)
 │   ├── context/            UserContext (usuário + atualização otimista), ThemeContext, ToastContext
 │   ├── components/
@@ -200,6 +200,7 @@ acessario/
 │   │   ├── layout/         AppShell/Page/Bleed, TopBar, BottomNav, RioScene
 │   │   ├── map/            AccessMap, LeafletRouteMap, CityMap (esquemático), MapFrame,
 │   │   │                   mapAdapters, mapGeometry, projection
+│   │   ├── places/         PlaceSearchBox (busca de lugares com sugestões, usada em dois lugares)
 │   │   ├── routes/         RouteCard, SegmentDetail, PlaceInput
 │   │   └── reports/        ReportVoteCard, NewReportForm, ContributeForm, LocationPicker…
 │   ├── pages/              uma página por tela do protótipo
@@ -274,7 +275,7 @@ Os atributos dos trechos representam o levantamento base (a proposta do projeto 
 
 - **OpenStreetMap**: tiles do mapa-base (ver [Mapa](#mapa-openstreetmap)).
 - **OSRM (roteador do OpenStreetMap)**: rotas a pé entre dois lugares, no servidor público da FOSSGIS (`routing.openstreetmap.de/routed-foot`), o mesmo usado pelo site openstreetmap.org. Só é chamado na primeira busca de um trajeto; depois, as rotas vêm da API. Endereço configurável em `VITE_ROUTING_URL`.
-- **Nominatim (OpenStreetMap)**: busca de lugares e endereços na origem/destino e em "Contribuir com o mapa", limitada ao município do Rio de Janeiro. A busca só acontece quando a pessoa clica em "Buscar", respeitando o limite de 1 requisição por segundo.
+- **Photon (OpenStreetMap)**: sugestões de lugares e endereços enquanto se digita, na origem/destino e em "Contribuir com o mapa", limitadas ao município do Rio de Janeiro. O app espera 350 ms sem digitar antes de buscar, cancela buscas antigas e guarda os resultados em cache, para respeitar o uso justo do serviço. A Nominatim não foi usada aqui porque as regras dela proíbem autocompletar. Endereço configurável em `VITE_GEOCODING_URL`. A busca só acontece quando a pessoa clica em "Buscar", respeitando o limite de 1 requisição por segundo.
 
 ---
 
@@ -325,7 +326,7 @@ Depois, cada relato ativo soma (facilidade) ou subtrai (obstáculo) seus pontos 
 npm test
 ```
 
-30 testes com `node:test` cobrem: conversão das rotas do roteador em trechos, trechos sem levantamento, gravação e cascata de rotas, ciclo de status dos relatos, desatualização, peso dos relatos, bloqueio por perfil, preferência por rotas planas, impacto de um relato na nota, ranqueamento com os dados de demonstração, rota no sentido inverso, CRUD/validação/cascata da API, leitura de rotas da Vercel Function, armazenamento no Blob (com um Blob simulado), enquadramento do mapa e localização do trecho mais próximo.
+32 testes com `node:test` cobrem: conversão dos lugares do Photon (incluindo endereços sem nome), conversão das rotas do roteador em trechos, trechos sem levantamento, gravação e cascata de rotas, ciclo de status dos relatos, desatualização, peso dos relatos, bloqueio por perfil, preferência por rotas planas, impacto de um relato na nota, ranqueamento com os dados de demonstração, rota no sentido inverso, CRUD/validação/cascata da API, leitura de rotas da Vercel Function, armazenamento no Blob (com um Blob simulado), enquadramento do mapa e localização do trecho mais próximo.
 
 ---
 

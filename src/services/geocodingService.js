@@ -1,49 +1,71 @@
 import { config } from '../config/env.js';
 import { ApiError } from '../api/ApiError.js';
 
-/** Área de busca: município do Rio de Janeiro (lon/lat do canto noroeste e sudeste). */
-const RIO_VIEWBOX = '-43.80,-22.74,-43.09,-23.09';
+/** Município do Rio de Janeiro: minLon, minLat, maxLon, maxLat. */
+const RIO_BBOX = '-43.80,-23.09,-43.09,-22.74';
+/** Centro aproximado da cidade, para priorizar resultados próximos. */
+const RIO_CENTER = { lat: -22.95, lon: -43.35 };
+const OSM_TYPES = { N: 'node', W: 'way', R: 'relation' };
 
-function neighborhoodOf(address = {}) {
-  return address.suburb || address.neighbourhood || address.city_district || address.quarter || address.city || 'Rio de Janeiro';
+const UNAVAILABLE = 'A busca de lugares está indisponível. Tente de novo em instantes.';
+
+/** Nome amigável: o nome do lugar ou, para endereços sem nome, "Rua, número". */
+export function placeName(p) {
+  if (p.name) return p.name;
+  const street = [p.street, p.housenumber].filter(Boolean).join(', ');
+  return street || p.district || p.city || 'Local sem nome';
+}
+
+/** Converte uma feature GeoJSON do Photon no formato de lugar do app. */
+export function fromPhotonFeature(feature) {
+  const p = feature.properties ?? {};
+  const [lon, lat] = feature.geometry.coordinates;
+  const name = placeName(p);
+  const street = [p.street, p.housenumber].filter(Boolean).join(', ');
+  const neighborhood = p.district || p.locality || p.city || 'Rio de Janeiro';
+  const details = [street && street !== name ? street : null, neighborhood].filter(Boolean);
+  return {
+    name,
+    neighborhood,
+    label: details.join(' · '),
+    lat,
+    lon,
+    osmId: `${OSM_TYPES[p.osm_type] ?? 'node'}/${p.osm_id}`,
+  };
 }
 
 /**
- * Busca de lugares e endereços com a API pública Nominatim (OpenStreetMap).
- * Política de uso: no máximo 1 requisição por segundo e nada de autocompletar,
- * por isso a busca só acontece quando a pessoa pede.
+ * Busca de lugares e endereços no Rio com o Photon (photon.komoot.io), geocodificador
+ * baseado no OpenStreetMap e feito para sugerir enquanto se digita.
+ * Uso justo: o app espera a pessoa parar de digitar, cancela buscas antigas e guarda em cache.
  */
 export const geocodingService = {
   /** @returns {Promise<{name, neighborhood, label, lat, lon, osmId}[]>} */
-  async search(text) {
+  async search(text, { signal } = {}) {
     const params = new URLSearchParams({
       q: text,
-      format: 'jsonv2',
-      addressdetails: '1',
-      limit: '6',
-      countrycodes: 'br',
-      viewbox: RIO_VIEWBOX,
-      bounded: '1',
-      'accept-language': 'pt-BR',
+      limit: '7',
+      bbox: RIO_BBOX,
+      lat: String(RIO_CENTER.lat),
+      lon: String(RIO_CENTER.lon),
     });
     let response;
     try {
-      response = await fetch(`${config.geocodingUrl}/search?${params}`);
+      response = await fetch(`${config.geocodingUrl}/api/?${params}`, { signal });
     } catch (cause) {
-      throw new ApiError('Serviço de endereços indisponível', { status: 0, cause, userMessage: 'A busca de endereços está indisponível. Tente de novo em instantes.' });
+      if (cause.name === 'AbortError') throw cause; // busca cancelada: a pessoa continuou digitando
+      throw new ApiError('Serviço de busca indisponível', { status: 0, cause, userMessage: UNAVAILABLE });
     }
-    if (!response.ok) throw new ApiError('Serviço de endereços indisponível', { status: response.status, userMessage: 'A busca de endereços está indisponível. Tente de novo em instantes.' });
-    const results = await response.json();
-    return results.map((item) => {
-      const name = item.name || item.display_name.split(',')[0];
-      return {
-        name,
-        neighborhood: neighborhoodOf(item.address),
-        label: item.display_name.split(',').slice(0, 3).join(','),
-        lat: Number(item.lat),
-        lon: Number(item.lon),
-        osmId: `${item.osm_type}/${item.osm_id}`,
-      };
+    if (!response.ok) throw new ApiError('Serviço de busca indisponível', { status: response.status, userMessage: UNAVAILABLE });
+    const data = await response.json();
+    const places = (data.features ?? []).map(fromPhotonFeature);
+    // o Photon pode devolver o mesmo lugar duas vezes (ex.: prédio e ponto de interesse)
+    const seen = new Set();
+    return places.filter((p) => {
+      const key = `${p.name}|${p.lat.toFixed(4)}|${p.lon.toFixed(4)}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
     });
   },
 };

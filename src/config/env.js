@@ -10,8 +10,8 @@ export const config = {
   apiMode: env.VITE_API_MODE === 'local' ? 'local' : 'http',
   /** Usuário da demonstração (não há autenticação no protótipo). */
   currentUserId: env.VITE_USER_ID ?? 'u-jose',
-  /** API pública de geocodificação (OpenStreetMap). */
-  geocodingUrl: 'https://nominatim.openstreetmap.org',
+  /** Busca de lugares enquanto se digita: Photon, geocodificador baseado no OpenStreetMap. */
+  geocodingUrl: env.VITE_GEOCODING_URL || 'https://photon.komoot.io',
   /** Roteador a pé do OpenStreetMap (OSRM da FOSSGIS, o mesmo do site openstreetmap.org). */
   routingUrl: env.VITE_ROUTING_URL || 'https://routing.openstreetmap.de/routed-foot',
   /**
