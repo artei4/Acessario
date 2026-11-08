@@ -1,0 +1,261 @@
+@import 'tailwindcss';
+
+/*
+ * AcessaRio — Tailwind CSS v4.
+ *
+ * As cores são variáveis CSS (abaixo) registradas como cores do Tailwind em @theme inline.
+ * Assim, classes como bg-surface, text-ink e border-line trocam sozinhas no modo escuro,
+ * sem precisar de "dark:" em cada componente. O tema escuro só redefine as variáveis.
+ */
+
+@theme inline {
+  --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  --color-canvas: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-alt: var(--surface-2);
+  --color-ink: var(--text);
+  --color-ink-soft: var(--text-2);
+  --color-line: var(--border);
+  --color-focus: var(--focus);
+
+  --color-navy: var(--navy);
+  --color-brand: var(--blue);
+  --color-brand-strong: var(--blue-600);
+  --color-brand-soft: var(--blue-50);
+  --color-brand-ring: var(--blue-100);
+  --color-ok: var(--green);
+  --color-ok-soft: var(--green-50);
+  --color-warn: var(--amber);
+  --color-warn-strong: var(--amber-500);
+  --color-warn-soft: var(--amber-50);
+  --color-bad: var(--red);
+  --color-bad-strong: var(--red-500);
+  --color-bad-soft: var(--red-50);
+  --color-mute: var(--slate);
+  --color-mute-line: var(--slate-300);
+
+  --color-on-brand: var(--on-primary);
+  --color-on-navy: var(--on-strong);
+  --color-knob: var(--knob);
+  --color-track: var(--track);
+  --color-chip: var(--badge-neutral);
+  --color-warn-card: var(--card-warning-bg);
+  --color-notice-ink: var(--notice-fg);
+  --color-warn-ink: var(--notice-warning-fg);
+  --color-warn-line: var(--notice-warning-border);
+  --color-glass: var(--glass);
+  --color-overlay: var(--overlay);
+  --color-skeleton-a: var(--skeleton-a);
+  --color-skeleton-b: var(--skeleton-b);
+  --color-logo: var(--logo-accent);
+
+  --color-map-land: var(--map-land);
+  --color-map-street: var(--map-street);
+  --color-map-water: var(--map-water);
+  --color-map-hill: var(--map-hill);
+  --color-map-label: var(--map-label);
+
+  --shadow-soft: 0 1px 2px var(--shadow-color), 0 4px 16px var(--shadow-color);
+  --shadow-shell: 0 0 0 1px var(--border), 0 12px 40px var(--shadow-color);
+
+  --animate-shimmer: shimmer 1.2s infinite;
+  --animate-toast-in: toast-in 0.2s ease-out;
+
+  @keyframes shimmer {
+    to {
+      background-position: -200% 0;
+    }
+  }
+  @keyframes toast-in {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+  }
+}
+
+:root {
+  --navy: #0b2a5b;
+  --blue: #1a56db;
+  --blue-600: #1546b8;
+  --blue-50: #eaf1ff;
+  --blue-100: #d6e4ff;
+  --green: #15803d;
+  --green-50: #e7f6ec;
+  --amber: #b45309;
+  --amber-500: #d97706;
+  --amber-50: #fef3c7;
+  --red: #b91c1c;
+  --red-500: #dc2626;
+  --red-50: #fdecec;
+  --slate: #64748b;
+  --slate-300: #94a3b8;
+
+  --bg: #eef2f8;
+  --surface: #ffffff;
+  --surface-2: #f6f8fc;
+  --text: #0f1b33;
+  --text-2: #4b5568;
+  --border: #d5dce8;
+  --focus: #f59e0b;
+
+  --map-land: #eef1ea;
+  --map-street: #ffffff;
+  --map-water: #b9d8f2;
+  --map-hill: #cfe3c6;
+  --map-label: #64748b;
+  --map-hill-stroke: #b8d3ad;
+  --map-marker-bg: #ffffff;
+  --map-marker-fg: #0f1b33;
+
+  --on-primary: #ffffff;
+  --on-strong: #ffffff;
+  --knob: #ffffff;
+  --track: #e5e9f0;
+  --badge-neutral: #edf0f5;
+  --card-warning-bg: #fffdf5;
+  --notice-fg: #0b2a5b;
+  --notice-warning-fg: #7c3a06;
+  --notice-warning-border: #f5d27a;
+  --glass: rgb(255 255 255 / 0.94);
+  --overlay: rgb(11 27 51 / 0.45);
+  --shadow-color: rgb(11 42 91 / 0.08);
+  --skeleton-a: #eef1f6;
+  --skeleton-b: #f7f9fc;
+  --logo-accent: #4ade80;
+  --scene-brightness: 1;
+  color-scheme: light;
+}
+
+/* Tema escuro: mesmos valores para "Escuro" e para "Automático" com o aparelho no escuro. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --navy: #13254a;
+    --blue: #7aa2ff;
+    --blue-600: #9dbbff;
+    --blue-50: #16264a;
+    --blue-100: #24396b;
+    --green: #4ade80;
+    --green-50: #10291b;
+    --amber: #fbbf24;
+    --amber-500: #f59e0b;
+    --amber-50: #2c220b;
+    --red: #f87171;
+    --red-500: #ef4444;
+    --red-50: #2f1515;
+    --slate: #94a3b8;
+    --slate-300: #4b5a72;
+    --bg: #070c17;
+    --surface: #0f1729;
+    --surface-2: #162038;
+    --text: #e7edf8;
+    --text-2: #a5b2c8;
+    --border: #2a3754;
+    --map-land: #172033;
+    --map-street: #2a3650;
+    --map-water: #173552;
+    --map-hill: #1c3a2a;
+    --map-label: #8d9bb2;
+    --map-hill-stroke: #2c5440;
+    --map-marker-bg: #0f1729;
+    --map-marker-fg: #e7edf8;
+    --on-primary: #08101f;
+    --on-strong: #ffffff;
+    --knob: #e7edf8;
+    --track: #24304a;
+    --badge-neutral: #1f2a42;
+    --card-warning-bg: #1d1808;
+    --notice-fg: #dbe6ff;
+    --notice-warning-fg: #fcd98a;
+    --notice-warning-border: #5a4513;
+    --glass: rgb(15 23 41 / 0.92);
+    --overlay: rgb(0 0 0 / 0.6);
+    --shadow-color: rgb(0 0 0 / 0.5);
+    --skeleton-a: #141d31;
+    --skeleton-b: #1c2741;
+    --scene-brightness: 0.62;
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme='dark'] {
+  --navy: #13254a;
+  --blue: #7aa2ff;
+  --blue-600: #9dbbff;
+  --blue-50: #16264a;
+  --blue-100: #24396b;
+  --green: #4ade80;
+  --green-50: #10291b;
+  --amber: #fbbf24;
+  --amber-500: #f59e0b;
+  --amber-50: #2c220b;
+  --red: #f87171;
+  --red-500: #ef4444;
+  --red-50: #2f1515;
+  --slate: #94a3b8;
+  --slate-300: #4b5a72;
+  --bg: #070c17;
+  --surface: #0f1729;
+  --surface-2: #162038;
+  --text: #e7edf8;
+  --text-2: #a5b2c8;
+  --border: #2a3754;
+  --map-land: #172033;
+  --map-street: #2a3650;
+  --map-water: #173552;
+  --map-hill: #1c3a2a;
+  --map-label: #8d9bb2;
+  --map-hill-stroke: #2c5440;
+  --map-marker-bg: #0f1729;
+  --map-marker-fg: #e7edf8;
+  --on-primary: #08101f;
+  --on-strong: #ffffff;
+  --knob: #e7edf8;
+  --track: #24304a;
+  --badge-neutral: #1f2a42;
+  --card-warning-bg: #1d1808;
+  --notice-fg: #dbe6ff;
+  --notice-warning-fg: #fcd98a;
+  --notice-warning-border: #5a4513;
+  --glass: rgb(15 23 41 / 0.92);
+  --overlay: rgb(0 0 0 / 0.6);
+  --shadow-color: rgb(0 0 0 / 0.5);
+  --skeleton-a: #141d31;
+  --skeleton-b: #1c2741;
+  --scene-brightness: 0.62;
+  color-scheme: dark;
+}
+
+@layer base {
+  html,
+  body {
+    @apply bg-canvas text-[15px] leading-[1.45] text-ink antialiased;
+  }
+
+  :focus-visible {
+    @apply rounded-md outline-3 outline-offset-2 outline-focus;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation: none !important;
+      transition: none !important;
+    }
+  }
+}
+
+/* Marcadores HTML desenhados dentro do Google Maps (fora da árvore do React). */
+@layer components {
+  .gm-dot {
+    @apply size-3.5 rounded-full border-2 border-white shadow-soft;
+  }
+  .gm-number {
+    @apply grid size-[22px] place-items-center rounded-full border-2 border-white bg-navy text-[11px] font-bold text-on-navy shadow-soft;
+  }
+  .gm-route-label {
+    @apply grid size-[22px] place-items-center rounded-full border-2 border-ink bg-surface text-[11px] font-bold text-ink shadow-soft;
+  }
+}

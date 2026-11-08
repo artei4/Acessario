@@ -1,7 +1,10 @@
 import { Button } from '../ui/Button.jsx';
 import { StatusBadge } from '../ui/Badge.jsx';
+import { Card } from '../ui/Card.jsx';
+import { PhotoThumb } from './PhotoThumb.jsx';
 import { getReportType } from '../../domain/reportTypes.js';
 import { segmentCode } from '../../domain/scoring.js';
+import { cn } from '../../utils/cn.js';
 import { formatShortDate } from '../../utils/format.js';
 import { reportMeta, tallyText } from './reportText.js';
 
@@ -20,9 +23,9 @@ export function ReportVoteCard({ report, segment, myVote, onVote, onUndo, busy, 
   const total = confirm + incorrect + resolved || 1;
 
   return (
-    <article className={`card stack ${featured ? 'card--warning' : ''}`} style={{ gap: 8 }} aria-busy={busy || undefined}>
-      <div className="row row--between">
-        <h3 style={{ fontSize: 15 }}>
+    <Card as="article" variant={featured ? 'warning' : 'default'} className="flex flex-col gap-2" aria-busy={busy || undefined}>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h3 className="text-[15px] font-bold">
           {type.label}
           {!featured && segment && ` · ${segmentCode(segment)}`}
         </h3>
@@ -30,43 +33,42 @@ export function ReportVoteCard({ report, segment, myVote, onVote, onUndo, busy, 
       </div>
 
       {featured && (
-        <div className="row" style={{ alignItems: 'stretch', flexWrap: 'nowrap' }}>
-          <div className="photo-thumb" style={{ width: 96, flex: 'none' }}>
-            {report.photo && <img src={report.photo} alt={`Foto do relato: ${type.label}`} />}
-            <span className="photo-thumb__label">{report.photo ? 'Foto' : 'Sem foto'} · {formatShortDate(report.createdAt)}</span>
-          </div>
-          <div className="stack" style={{ gap: 6, flex: 1, justifyContent: 'center' }}>
-            <div className="vote-bar" aria-hidden="true">
-              <span className="vote-bar__confirm" style={{ width: `${(confirm / total) * 100}%` }} />
-              <span className="vote-bar__contest" style={{ width: `${((incorrect + resolved) / total) * 100}%`, marginLeft: 'auto' }} />
+        <div className="flex items-stretch gap-2">
+          <PhotoThumb
+            className="w-24 flex-none"
+            src={report.photo}
+            alt={`Foto do relato: ${type.label}`}
+            label={`${report.photo ? 'Foto' : 'Sem foto'} · ${formatShortDate(report.createdAt)}`}
+          />
+          <div className="flex flex-1 flex-col justify-center gap-1.5">
+            <div className="flex h-1.5 overflow-hidden rounded-full bg-track" aria-hidden="true">
+              <span className="bg-ok" style={{ width: `${(confirm / total) * 100}%` }} />
+              <span className="ml-auto bg-bad-strong" style={{ width: `${((incorrect + resolved) / total) * 100}%` }} />
             </div>
-            <span className="small strong">{tallyText(report)}</span>
+            <span className="text-[13px] font-bold">{tallyText(report)}</span>
           </div>
         </div>
       )}
 
-      <span className="tiny muted">
-        {featured ? reportMeta(report) : `${tallyText(report)} · relato de ${formatShortDate(report.createdAt)} · confiabilidade ${report.statusInfo.reliability}`}
-        {segment && featured && ` · ${segmentCode(segment)}`}
+      <span className="text-xs text-ink-soft">
+        {featured
+          ? `${reportMeta(report)}${segment ? ` · ${segmentCode(segment)}` : ''}`
+          : `${tallyText(report)} · relato de ${formatShortDate(report.createdAt)} · confiabilidade ${report.statusInfo.reliability}`}
       </span>
-      {report.description && <span className="small">“{report.description}”</span>}
-      {report.outdated && (
-        <span className="tiny strong" style={{ color: 'var(--amber)' }}>
-          Possivelmente desatualizado: sem confirmações há mais de 30 dias.
-        </span>
-      )}
+      {report.description && <span className="text-[13px]">“{report.description}”</span>}
+      {report.outdated && <span className="text-xs font-bold text-warn">Possivelmente desatualizado: sem confirmações há mais de 30 dias.</span>}
 
       {isOwn ? (
-        <p className="tiny muted" style={{ margin: 0 }}>Este relato é seu. Outras pessoas precisam confirmá-lo.</p>
+        <p className="m-0 text-xs text-ink-soft">Este relato é seu. Outras pessoas precisam confirmá-lo.</p>
       ) : (
         <>
-          {featured && <p className="small strong" style={{ margin: 0 }}>Você viu esse problema?</p>}
-          <div className={featured ? 'stack' : 'grid-2'} style={featured ? { gap: 8 } : { gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
+          {featured && <p className="m-0 text-[13px] font-bold">Você viu esse problema?</p>}
+          <div className={cn(featured ? 'flex flex-col gap-2' : 'grid grid-cols-3 gap-1.5')}>
             {VOTES.map((vote) => (
               <Button
                 key={vote.type}
                 variant={vote.variant}
-                size={featured ? undefined : 'sm'}
+                size={featured ? 'md' : 'sm'}
                 selected={myVote?.type === vote.type}
                 aria-pressed={myVote?.type === vote.type}
                 disabled={busy}
@@ -78,15 +80,15 @@ export function ReportVoteCard({ report, segment, myVote, onVote, onUndo, busy, 
             ))}
           </div>
           {myVote && (
-            <p className="tiny muted" style={{ margin: 0 }}>
+            <p className="m-0 text-xs text-ink-soft">
               Você {VOTE_LABEL[myVote.type]} em {formatShortDate(myVote.createdAt)}.{' '}
-              <button type="button" className="link-button tiny" onClick={() => onUndo(myVote.id, report.id)} disabled={busy}>
+              <button type="button" className="cursor-pointer font-semibold text-brand" onClick={() => onUndo(myVote.id, report.id)} disabled={busy}>
                 Desfazer voto
               </button>
             </p>
           )}
         </>
       )}
-    </article>
+    </Card>
   );
 }

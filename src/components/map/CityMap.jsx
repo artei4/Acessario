@@ -1,19 +1,9 @@
 import { useMemo, useRef } from 'react';
 import { fitViewBox, project, toPoints, unproject } from './projection.js';
+import { LEVEL_COLORS, MapFrame } from './MapFrame.jsx';
 
-export const LEVEL_COLORS = {
-  good: '#15803d',
-  limited: '#d97706',
-  bad: '#dc2626',
-  unknown: '#94a3b8',
-};
+export { LEVEL_COLORS, LEVEL_LABELS } from './MapFrame.jsx';
 
-export const LEVEL_LABELS = {
-  good: 'Boa acessibilidade',
-  limited: 'Com limitações',
-  bad: 'Dificuldade alta',
-  unknown: 'Não verificado',
-};
 
 /* Elementos de fundo (esquemáticos) em [lat, lon]. */
 const SEA = [[-22.9716, -43.195], [-22.97, -43.187], [-22.968, -43.18], [-22.9655, -43.1742], [-22.964, -43.168], [-22.99, -43.168], [-22.99, -43.195]];
@@ -51,7 +41,8 @@ export function CityMap({
   showLegend = false,
   legendPosition = 'left',
   label = 'Mapa da região',
-  className = '',
+  className,
+  bleed = false,
   children,
 }) {
   const svgRef = useRef(null);
@@ -102,8 +93,9 @@ export function CityMap({
   const sortedRoutes = [...routes].sort((a, b) => order[a.emphasis ?? 'normal'] - order[b.emphasis ?? 'normal']);
 
   return (
-    <div className={`map ${onPick ? 'map--picker' : ''} ${className}`} style={{ aspectRatio: aspect }}>
+    <MapFrame aspect={aspect} bleed={bleed} picker={Boolean(onPick)} showLegend={showLegend} legendPosition={legendPosition} className={className} overlay={children}>
       <svg
+        className="block size-full"
         ref={svgRef}
         viewBox={`${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}`}
         role={onPick ? 'application' : 'img'}
@@ -193,17 +185,6 @@ export function CityMap({
         })}
       </svg>
 
-      {showLegend && (
-        <div className={`map__legend ${legendPosition === 'right' ? 'map__legend--right' : ''}`} aria-hidden="true">
-          {Object.entries(LEVEL_LABELS).map(([level, text]) => (
-            <span key={level}>
-              <span className="legend-dot" style={{ background: LEVEL_COLORS[level] }} />
-              {text}
-            </span>
-          ))}
-        </div>
-      )}
-      {children}
-    </div>
+    </MapFrame>
   );
 }

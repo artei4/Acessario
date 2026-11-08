@@ -1,5 +1,7 @@
 import { useEffect } from 'react';
 import { BottomNav } from './components/layout/BottomNav.jsx';
+import { AppShell, Page } from './components/layout/Page.jsx';
+import { Notice } from './components/ui/Card.jsx';
 import { ErrorState, LoadingState } from './components/ui/States.jsx';
 import { useCurrentUser } from './context/UserContext.jsx';
 import { matchPath, useHashRouter } from './hooks/useHashRouter.js';
@@ -43,38 +45,40 @@ export function App() {
 
   if (loading) {
     return (
-      <main className="app">
-        <div className="page"><LoadingState lines={4} /></div>
-      </main>
+      <AppShell>
+        <Page withNav={false}>
+          <LoadingState lines={4} />
+        </Page>
+      </AppShell>
     );
   }
 
   if (error || !user) {
     return (
-      <main className="app">
-        <div className="page">
+      <AppShell>
+        <Page withNav={false}>
           <ErrorState error={error} onRetry={reload} />
           {config.apiMode === 'http' && (
-            <p className="notice small">
-              A API em {config.apiUrl} não respondeu. Rode <code>npm start</code> (API + app) ou{' '}
-              <code>npm run api</code> em outro terminal. Para testar sem servidor, use <code>npm run dev:demo</code>.
-            </p>
+            <Notice>
+              A API em {config.apiUrl} não respondeu. Rode <code className="font-mono text-xs">npm start</code> (API + app) ou{' '}
+              <code className="font-mono text-xs">npm run api</code> em outro terminal. Para testar sem servidor, use <code className="font-mono text-xs">npm run dev:demo</code>.
+            </Notice>
           )}
-        </div>
-      </main>
+        </Page>
+      </AppShell>
     );
   }
 
-  if (!match || (needsOnboarding && path !== '/boas-vindas')) return <main className="app" />;
+  if (!match || (needsOnboarding && path !== '/boas-vindas')) return <AppShell />;
 
-  const Page = match.page;
+  const Screen = match.page;
   // "Contribuir" aponta para a seção de contribuição dentro do Perfil
   const activeNav = match.nav === 'perfil' && query.secao === 'contribuir' ? 'contribuir' : match.nav;
 
   return (
-    <main className="app">
-      <Page {...match.params} query={query} navigate={navigate} back={back} />
+    <AppShell>
+      <Screen {...match.params} query={query} navigate={navigate} back={back} />
       {match.nav && <BottomNav active={activeNav} onNavigate={navigate} />}
-    </main>
+    </AppShell>
   );
 }

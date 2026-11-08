@@ -1,12 +1,12 @@
-/** Ilustração decorativa da tela de busca: morros, prédios, mar e areia. */
+/** Ilustração decorativa da tela de busca: morros, prédios, mar e areia. Fica mais escura no modo escuro. */
 export function RioScene() {
   const buildings = [
     [20, 120, 26], [50, 100, 22], [76, 135, 30], [110, 112, 24], [138, 128, 28],
     [270, 118, 26], [300, 100, 24], [328, 132, 30], [362, 110, 26], [392, 126, 24],
   ];
   return (
-    <div className="scene" aria-hidden="true">
-      <svg viewBox="0 0 420 220" preserveAspectRatio="xMidYMid slice">
+    <div className="-mx-4 h-[220px] brightness-(--scene-brightness)" aria-hidden="true">
+      <svg viewBox="0 0 420 220" preserveAspectRatio="xMidYMid slice" className="block size-full">
         <rect width="420" height="220" fill="#bfe0f5" />
         <path d="M150 170 C180 60 230 30 262 52 C290 70 300 120 330 170 Z" fill="#2f7d4f" />
         <path d="M230 170 C250 110 280 90 310 100 C340 112 350 150 370 170 Z" fill="#3d9a62" />

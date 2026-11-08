@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Bleed, Page } from '../components/layout/Page.jsx';
+import { MapBackButton } from '../components/layout/TopBar.jsx';
 import { CityMap } from '../components/map/CityMap.jsx';
 import { endpointMarkers, toMapRoute } from '../components/map/mapAdapters.js';
 import { RouteCard } from '../components/routes/RouteCard.jsx';
-import { Icon } from '../components/ui/Icon.jsx';
 import { Button } from '../components/ui/Button.jsx';
-import { EmptyState, ErrorState, LoadingState } from '../components/ui/States.jsx';
+import { EmptyState, ErrorState, LoadingState, Skeleton } from '../components/ui/States.jsx';
 import { useCurrentUser } from '../context/UserContext.jsx';
 import { useRouteOptions } from '../hooks/useRouteOptions.js';
 import { useRecentSearches } from '../hooks/useRecentSearches.js';
@@ -49,11 +50,11 @@ export function RoutesPage({ query, navigate, back }) {
 
   if (!originId && !loadingSearches) {
     return (
-      <div className="page">
+      <Page>
         <EmptyState icon="routes" title="Nenhum trajeto escolhido">
           <Button onClick={() => navigate('/buscar')}>Buscar destino</Button>
         </EmptyState>
-      </div>
+      </Page>
     );
   }
 
@@ -61,11 +62,11 @@ export function RoutesPage({ query, navigate, back }) {
   const destination = byId.get(destinationId);
 
   return (
-    <div className="page page--flush">
-      <div style={{ position: 'relative', margin: '0 -16px' }}>
+    <Page flush>
+      <Bleed>
         {evaluations.length > 0 ? (
           <CityMap
-            className="map--bleed"
+            bleed
             routes={mapRoutes}
             markers={endpointMarkers(evaluations[0])}
             aspect={1.25}
@@ -75,19 +76,17 @@ export function RoutesPage({ query, navigate, back }) {
             label="Mapa com as rotas encontradas, coloridas pela acessibilidade de cada trecho"
           />
         ) : (
-          <div className="skeleton" style={{ aspectRatio: 1.25, borderRadius: 0 }} />
+          <Skeleton className="aspect-[1.25] rounded-none" />
         )}
-        <button type="button" className="map__back" onClick={() => back('/buscar')} aria-label="Voltar para a busca">
-          <Icon name="back" size={20} />
-        </button>
-      </div>
+        <MapBackButton onClick={() => back('/buscar')} label="Voltar para a busca" />
+      </Bleed>
 
-      <div className="row row--between">
-        <h1 style={{ fontSize: 17 }}>Rotas para {user.name}</h1>
-        <span className="tiny muted">Perfil: {getProfile(user.profile).label}</span>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h1 className="text-[17px] font-bold">Rotas para {user.name}</h1>
+        <span className="text-xs text-ink-soft">Perfil: {getProfile(user.profile).label}</span>
       </div>
       {origin && destination && (
-        <p className="small muted" style={{ margin: '-8px 0 0' }}>
+        <p className="-mt-2 mb-0 text-[13px] text-ink-soft">
           {origin.name} → {destination.name}
         </p>
       )}
@@ -102,17 +101,11 @@ export function RoutesPage({ query, navigate, back }) {
         </EmptyState>
       )}
 
-      <div className="stack">
+      <div className="flex flex-col gap-2.5">
         {evaluations.map((evaluation) => (
-          <RouteCard
-            key={evaluation.route.id}
-            evaluation={evaluation}
-            selected={evaluation.route.id === selectedId}
-            onSelect={setSelectedId}
-            onOpen={open}
-          />
+          <RouteCard key={evaluation.route.id} evaluation={evaluation} selected={evaluation.route.id === selectedId} onSelect={setSelectedId} onOpen={open} />
         ))}
       </div>
-    </div>
+    </Page>
   );
 }

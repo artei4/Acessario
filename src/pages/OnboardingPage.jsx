@@ -1,5 +1,7 @@
 import { useState } from 'react';
+import { Page } from '../components/layout/Page.jsx';
 import { Button } from '../components/ui/Button.jsx';
+import { Card } from '../components/ui/Card.jsx';
 import { Icon } from '../components/ui/Icon.jsx';
 import { ThemeToggleButton } from '../components/ui/ThemeToggle.jsx';
 import { PROFILE_LIST } from '../domain/profiles.js';
@@ -26,52 +28,60 @@ export function OnboardingPage({ navigate }) {
   };
 
   return (
-    <form className="page page--flush page--no-nav" onSubmit={handleSubmit}>
-      <header className="hero">
-        <ThemeToggleButton className="theme-button--on-dark" />
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}>
+    <Page as="form" flush withNav={false} onSubmit={handleSubmit}>
+      <header className="relative -mx-4 overflow-hidden rounded-b-3xl bg-navy px-6 pt-12 pb-8 text-center text-on-navy">
+        <ThemeToggleButton onDark className="absolute top-3 right-3" />
+        <div className="mb-2 flex justify-center">
           <Icon name="pin" size={40} strokeWidth={2.2} />
         </div>
-        <p className="hero__logo" style={{ margin: 0 }}>
-          Acessa<span>Rio</span>
+        <p className="m-0 text-[34px] font-extrabold tracking-tight">
+          Acessa<span className="text-logo">Rio</span>
         </p>
-        <p className="hero__tagline" style={{ margin: 0 }}>Navegação urbana inclusiva</p>
+        <p className="m-0 text-sm opacity-85">Navegação urbana inclusiva</p>
       </header>
 
-      <div className="stack" style={{ gap: 4, marginTop: 8 }}>
-        <p className="muted" style={{ margin: 0 }}>Olá, {user.name}!</p>
-        <h1 className="headline">Qual é o seu perfil de mobilidade?</h1>
+      <div className="mt-2 flex flex-col gap-1">
+        <p className="m-0 text-ink-soft">Olá, {user.name}!</p>
+        <h1 className="text-2xl font-extrabold tracking-tight text-balance">Qual é o seu perfil de mobilidade?</h1>
       </div>
 
-      <fieldset className="stack" style={{ border: 0, padding: 0, margin: 0, gap: 8 }}>
+      <fieldset className="m-0 flex flex-col gap-2 border-0 p-0">
         <legend className="sr-only">Perfil de mobilidade</legend>
-        {PROFILE_LIST.map((option) => (
-          <label key={option.id} className="profile-option">
-            <input type="radio" name="profile" value={option.id} checked={profile === option.id} onChange={() => setProfile(option.id)} />
-            <span className="profile-option__icon"><Icon name={option.icon} size={24} /></span>
-            <span className="profile-option__text">
-              <span className="strong" style={{ display: 'block' }}>{option.label}</span>
-              {profile === option.id && <span className="tiny muted">{option.description}</span>}
-            </span>
-            {profile === option.id && (
-              <span className="profile-option__check" aria-hidden="true"><Icon name="check" size={16} strokeWidth={3} /></span>
-            )}
-          </label>
-        ))}
+        {PROFILE_LIST.map((option) => {
+          const checked = profile === option.id;
+          return (
+            <label
+              key={option.id}
+              className="flex cursor-pointer items-center gap-3 rounded-xl border-[1.5px] border-line bg-surface p-3.5 has-checked:border-2 has-checked:border-brand has-checked:bg-brand-soft has-focus-visible:outline-3 has-focus-visible:outline-offset-2 has-focus-visible:outline-focus"
+            >
+              <input type="radio" name="profile" value={option.id} className="sr-only" checked={checked} onChange={() => setProfile(option.id)} />
+              <span className="flex text-brand">
+                <Icon name={option.icon} size={24} />
+              </span>
+              <span className="flex-1">
+                <span className="block font-bold">{option.label}</span>
+                {checked && <span className="text-xs text-ink-soft">{option.description}</span>}
+              </span>
+              {checked && (
+                <span className="grid size-6 place-items-center rounded-full bg-brand text-on-brand" aria-hidden="true">
+                  <Icon name="check" size={16} strokeWidth={3} />
+                </span>
+              )}
+            </label>
+          );
+        })}
       </fieldset>
 
-      <div className="card card--soft">
-        <p className="small strong" style={{ margin: 0 }}>Mapa feito por todos</p>
-        <p className="tiny muted" style={{ margin: 0 }}>
-          Relatos de outros usuários ajustam a nota e o tempo das suas rotas. Você pode mudar o perfil quando quiser.
-        </p>
-      </div>
+      <Card variant="soft">
+        <p className="m-0 text-[13px] font-bold">Mapa feito por todos</p>
+        <p className="m-0 text-xs text-ink-soft">Relatos de outros usuários ajustam a nota e o tempo das suas rotas. Você pode mudar o perfil quando quiser.</p>
+      </Card>
 
-      <div style={{ marginTop: 'auto' }}>
+      <div className="mt-auto">
         <Button type="submit" size="lg" block loading={saving}>
           Continuar
         </Button>
       </div>
-    </form>
+    </Page>
   );
 }

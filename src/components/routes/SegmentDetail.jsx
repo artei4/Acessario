@@ -1,27 +1,39 @@
 import { Badge } from '../ui/Badge.jsx';
 import { Button } from '../ui/Button.jsx';
+import { Card, Notice, SectionTitle } from '../ui/Card.jsx';
 import { ScoreRing, scoreLevel } from '../ui/ScoreRing.jsx';
+import { PhotoThumb } from '../reports/PhotoThumb.jsx';
 import { ReportSummary } from '../reports/ReportSummary.jsx';
 import { getReportType } from '../../domain/reportTypes.js';
+import { cn } from '../../utils/cn.js';
 import { formatMeters, formatRelativeDays, formatShortDate, formatWidth, signed } from '../../utils/format.js';
 
 function PhotoStrip({ reports }) {
   const items = reports.slice(0, 3);
   while (items.length < 3) items.push(null);
   return (
-    <div className="grid-2" style={{ gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
+    <div className="grid grid-cols-3 gap-1.5">
       {items.map((report, i) =>
         report ? (
-          <div key={report.id} className="photo-thumb">
-            {report.photo && <img src={report.photo} alt={`Foto: ${getReportType(report).label}`} />}
-            <span className="photo-thumb__label">
-              {getReportType(report).short} · {formatShortDate(report.createdAt)}
-            </span>
-          </div>
+          <PhotoThumb
+            key={report.id}
+            src={report.photo}
+            alt={`Foto: ${getReportType(report).label}`}
+            label={`${getReportType(report).short} · ${formatShortDate(report.createdAt)}`}
+          />
         ) : (
-          <div key={`empty-${i}`} className="photo-thumb photo-thumb--empty">Sem foto</div>
+          <PhotoThumb key={`empty-${i}`} empty />
         ),
       )}
+    </div>
+  );
+}
+
+function Attribute({ label, value }) {
+  return (
+    <div>
+      <dt className="inline text-ink-soft">{label} </dt>
+      <dd className="m-0 inline font-bold">{value}</dd>
     </div>
   );
 }
@@ -33,59 +45,51 @@ export function SegmentDetail({ evaluation, routeName, onReport }) {
   const outdated = reports.filter((r) => r.active && r.outdated);
 
   return (
-    <section className="card stack" aria-labelledby={`seg-${segment.id}`} style={{ gap: 12 }}>
-      <div className="row row--between">
-        <h2 id={`seg-${segment.id}`} style={{ fontSize: 15 }}>
+    <Card as="section" className="flex flex-col gap-3" aria-labelledby={`seg-${segment.id}`}>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 id={`seg-${segment.id}`} className="text-[15px] font-bold">
           {routeName} · {code} · {formatMeters(segment.lengthM)}
         </h2>
-        {blocked ? (
-          <Badge tone="danger">Impedido</Badge>
-        ) : level !== 'good' ? (
-          <Badge tone="warning">Atenção</Badge>
-        ) : (
-          <Badge tone="success">Bom</Badge>
-        )}
+        {blocked ? <Badge tone="danger">Impedido</Badge> : level !== 'good' ? <Badge tone="warning">Atenção</Badge> : <Badge tone="success">Bom</Badge>}
       </div>
-      <p className="small muted" style={{ margin: '-8px 0 0' }}>{segment.street}</p>
+      <p className="-mt-2 mb-0 text-[13px] text-ink-soft">{segment.street}</p>
 
-      <div className="row" style={{ flexWrap: 'nowrap', gap: 14 }}>
+      <div className="flex items-center gap-3.5">
         <ScoreRing score={score} />
-        <dl className="attr-grid" style={{ margin: 0, flex: 1 }}>
-          <div><dt className="muted" style={{ display: 'inline' }}>Largura </dt><dd className="strong" style={{ display: 'inline', margin: 0 }}>{formatWidth(segment.widthM)}</dd></div>
-          <div><dt className="muted" style={{ display: 'inline' }}>Inclinação </dt><dd className="strong" style={{ display: 'inline', margin: 0 }}>{segment.slopePct}%</dd></div>
-          <div><dt className="muted" style={{ display: 'inline' }}>Escadas </dt><dd className="strong" style={{ display: 'inline', margin: 0 }}>{segment.hasStairs ? 'Sim' : 'Não'}</dd></div>
-          <div><dt className="muted" style={{ display: 'inline' }}>Rampas </dt><dd className="strong" style={{ display: 'inline', margin: 0 }}>{segment.hasRamps ? 'Sim' : 'Não'}</dd></div>
-          <div><dt className="muted" style={{ display: 'inline' }}>Piso </dt><dd className="strong" style={{ display: 'inline', margin: 0 }}>{segment.floor === 'regular' ? 'Regular' : 'Irregular'}</dd></div>
-          <div><dt className="muted" style={{ display: 'inline' }}>Piso tátil </dt><dd className="strong" style={{ display: 'inline', margin: 0 }}>{segment.tactile ? 'Sim' : 'Não'}</dd></div>
+        <dl className="m-0 grid flex-1 grid-cols-2 gap-x-3 gap-y-0.5 text-[13px]">
+          <Attribute label="Largura" value={formatWidth(segment.widthM)} />
+          <Attribute label="Inclinação" value={`${segment.slopePct}%`} />
+          <Attribute label="Escadas" value={segment.hasStairs ? 'Sim' : 'Não'} />
+          <Attribute label="Rampas" value={segment.hasRamps ? 'Sim' : 'Não'} />
+          <Attribute label="Piso" value={segment.floor === 'regular' ? 'Regular' : 'Irregular'} />
+          <Attribute label="Piso tátil" value={segment.tactile ? 'Sim' : 'Não'} />
         </dl>
       </div>
 
-      {blocked && (
-        <p className="notice notice--danger" style={{ margin: 0 }}>
-          Trecho impedido para o seu perfil: {blockReasons.join(', ')}.
-        </p>
-      )}
+      {blocked && <Notice tone="danger">Trecho impedido para o seu perfil: {blockReasons.join(', ')}.</Notice>}
 
       <PhotoStrip reports={reports} />
 
       <div>
-        <p className="tiny muted" style={{ margin: '0 0 4px' }}>Como a nota foi calculada</p>
-        <ul className="breakdown list-plain" style={{ flexDirection: 'row' }} aria-label="Composição da nota">
+        <p className="mt-0 mb-1 text-xs text-ink-soft">Como a nota foi calculada</p>
+        <ul className="m-0 flex list-none flex-wrap gap-x-3 gap-y-1 p-0 text-xs font-semibold" aria-label="Composição da nota">
           {breakdown.map((item) => (
-            <li key={`${item.label}-${item.reportId ?? ''}`} className={item.points > 0 ? 'breakdown__pos' : 'breakdown__neg'}>
+            <li key={`${item.label}-${item.reportId ?? ''}`} className={item.points > 0 ? 'text-ok' : 'text-bad'}>
               {signed(item.points)} {item.label}
             </li>
           ))}
         </ul>
       </div>
 
-      <div className="stack" style={{ gap: 6 }}>
-        <h3 className="section-title">Relatos deste trecho</h3>
+      <div className="flex flex-col gap-1.5">
+        <SectionTitle as="h3">Relatos deste trecho</SectionTitle>
         {reports.length === 0 ? (
-          <p className="small muted" style={{ margin: 0 }}>Ninguém relatou nada aqui ainda.</p>
+          <p className="m-0 text-[13px] text-ink-soft">Ninguém relatou nada aqui ainda.</p>
         ) : (
-          <ul className="list-plain">
-            {reports.map((report) => <ReportSummary key={report.id} report={report} />)}
+          <ul className="m-0 flex list-none flex-col gap-1.5 p-0">
+            {reports.map((report) => (
+              <ReportSummary key={report.id} report={report} />
+            ))}
           </ul>
         )}
       </div>
@@ -95,26 +99,26 @@ export function SegmentDetail({ evaluation, routeName, onReport }) {
       </Button>
 
       {outdated.map((r) => (
-        <p key={r.id} className="notice notice--warning" style={{ margin: 0 }}>
+        <Notice key={r.id} tone="warning">
           <strong>Possivelmente desatualizado:</strong> {getReportType(r).label.toLowerCase()}, relato de {formatShortDate(r.createdAt)}.
-        </p>
+        </Notice>
       ))}
 
-      <div className="stack" style={{ gap: 4 }}>
-        <h3 className="section-title">Tempo neste trecho</h3>
-        <div className="row row--between small">
+      <div className="flex flex-col gap-1">
+        <SectionTitle as="h3">Tempo neste trecho</SectionTitle>
+        <div className="flex items-center justify-between gap-2 text-[13px]">
           <span>{delayReasons.length ? delayReasons.join(' e ') : 'Sem atrasos previstos'}</span>
-          <span className="strong" style={{ color: delayMin ? 'var(--amber)' : 'var(--green)' }}>+{delayMin} min</span>
+          <span className={cn('font-bold', delayMin ? 'text-warn' : 'text-ok')}>+{delayMin} min</span>
         </div>
-        <p className="tiny muted" style={{ margin: 0 }}>Se o trecho ficar impedido, o app sugere outra rota.</p>
+        <p className="m-0 text-xs text-ink-soft">Se o trecho ficar impedido, o app sugere outra rota.</p>
       </div>
 
-      <div className="row row--between tiny">
+      <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
         <span>
           Confiabilidade: <Badge tone={verified ? 'success' : 'neutral'}>{verified ? 'Verificado' : 'Não verificado'}</Badge>
         </span>
-        <span className="muted">Última verificação: {formatRelativeDays(segment.surveyedAt)}</span>
+        <span className="text-ink-soft">Última verificação: {formatRelativeDays(segment.surveyedAt)}</span>
       </div>
-    </section>
+    </Card>
   );
 }

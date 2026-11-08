@@ -2,6 +2,9 @@ import { createContext, useCallback, useContext, useMemo, useRef, useState } fro
 
 const ToastContext = createContext(null);
 
+// tons fixos (não mudam com o tema) para garantir contraste com texto branco
+const TOAST_TONES = { success: 'bg-[#15803d]', danger: 'bg-[#b91c1c]', info: 'bg-[#0b2a5b]' };
+
 export function ToastProvider({ children }) {
   const [toasts, setToasts] = useState([]);
   const nextId = useRef(1);
@@ -22,9 +25,14 @@ export function ToastProvider({ children }) {
   return (
     <ToastContext.Provider value={value}>
       {children}
-      <div className="toast-region" role="status" aria-live="polite">
+      <div className="fixed bottom-[76px] left-1/2 z-50 flex w-[min(408px,calc(100%-32px))] -translate-x-1/2 flex-col gap-2" role="status" aria-live="polite">
         {toasts.map((toast) => (
-          <button key={toast.id} type="button" className={`toast toast--${toast.tone}`} onClick={() => dismiss(toast.id)}>
+          <button
+            key={toast.id}
+            type="button"
+            className={`animate-toast-in cursor-pointer rounded-lg px-3.5 py-3 text-left font-semibold text-white shadow-soft ${TOAST_TONES[toast.tone] ?? TOAST_TONES.info}`}
+            onClick={() => dismiss(toast.id)}
+          >
             {toast.message}
           </button>
         ))}

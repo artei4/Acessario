@@ -1,7 +1,9 @@
 import { useMemo, useState } from 'react';
 import { CityMap } from '../map/CityMap.jsx';
+import { MapHint } from '../map/MapFrame.jsx';
 import { Button } from '../ui/Button.jsx';
 import { Icon } from '../ui/Icon.jsx';
+import { FieldError, TextInput } from '../ui/Field.jsx';
 import { useGeocoding } from '../../hooks/useGeocoding.js';
 import { nearestSegment } from '../../domain/geo.js';
 import { segmentCode } from '../../domain/scoring.js';
@@ -47,7 +49,7 @@ export function LocationPicker({ segments, point, onChange, hint = 'Arraste para
   };
 
   return (
-    <div className="stack" style={{ gap: 8 }}>
+    <div className="flex flex-col gap-2">
       <CityMap
         routes={mapRoutes}
         markers={point ? [{ id: 'pin', kind: 'pin', point }] : []}
@@ -56,34 +58,35 @@ export function LocationPicker({ segments, point, onChange, hint = 'Arraste para
         onPick={onChange}
         label="Mapa para marcar o local. Toque ou use as setas do teclado para mover o marcador."
       >
-        <span className="map__hint">{point ? hint : 'Toque no mapa para marcar'}</span>
+        <MapHint>{point ? hint : 'Toque no mapa para marcar'}</MapHint>
       </CityMap>
 
-      <div className="row small" style={{ gap: 6 }}>
+      <div className="flex flex-wrap items-center gap-1.5 text-[13px]">
         <Icon name="locate" size={16} />
         {nearest ? (
           <span>
-            <span className="strong" style={{ color: 'var(--green)' }}>{nearest.segment.street}</span>
-            <span className="muted"> · {segmentCode(nearest.segment)}</span>
+            <span className="font-bold text-ok">{nearest.segment.street}</span>
+            <span className="text-ink-soft"> · {segmentCode(nearest.segment)}</span>
           </span>
         ) : point ? (
-          <span className="field__error" style={{ margin: 0 }}>Ponto fora dos trechos mapeados</span>
+          <FieldError>Ponto fora dos trechos mapeados</FieldError>
         ) : (
-          <span className="muted">Marque um ponto sobre um trecho (linhas tracejadas)</span>
+          <span className="text-ink-soft">Marque um ponto sobre um trecho (linhas tracejadas)</span>
         )}
-        <button type="button" className="link-button small" onClick={useDeviceLocation}>
+        <button type="button" className="cursor-pointer font-semibold text-brand" onClick={useDeviceLocation}>
           Usar minha localização
         </button>
       </div>
-      {geoError && <span className="field__error">{geoError}</span>}
+      {geoError && <FieldError>{geoError}</FieldError>}
 
       {withAddressSearch && (
-        <div className="stack" style={{ gap: 6 }}>
-          <div className="row" style={{ flexWrap: 'nowrap' }}>
-            <label className="sr-only" htmlFor="address-search">Ou digite o endereço</label>
-            <input
+        <div className="flex flex-col gap-1.5">
+          <div className="flex gap-2">
+            <label className="sr-only" htmlFor="address-search">
+              Ou digite o endereço
+            </label>
+            <TextInput
               id="address-search"
-              className="input"
               placeholder="Ou digite o endereço"
               value={address}
               onChange={(e) => setAddress(e.target.value)}
@@ -93,15 +96,17 @@ export function LocationPicker({ segments, point, onChange, hint = 'Arraste para
               Buscar
             </Button>
           </div>
-          {geocoding.error && <span className="field__error">{geocoding.error.message}. Marque o ponto no mapa.</span>}
+          {geocoding.error && <FieldError>{geocoding.error.message}. Marque o ponto no mapa.</FieldError>}
           {geocoding.searched && !geocoding.error && geocoding.results.length === 0 && (
-            <span className="tiny muted">Nenhum endereço encontrado na área mapeada.</span>
+            <span className="text-xs text-ink-soft">Nenhum endereço encontrado na área mapeada.</span>
           )}
           {geocoding.results.length > 1 && (
-            <ul className="suggestions">
+            <ul className="m-0 list-none rounded-lg border border-line bg-surface p-1 shadow-soft">
               {geocoding.results.map((r) => (
                 <li key={`${r.lat},${r.lon}`}>
-                  <button type="button" className="small" onClick={() => onChange([r.lat, r.lon])}>{r.label}</button>
+                  <button type="button" className="w-full cursor-pointer rounded-md px-2.5 py-2 text-left text-[13px] hover:bg-brand-soft" onClick={() => onChange([r.lat, r.lon])}>
+                    {r.label}
+                  </button>
                 </li>
               ))}
             </ul>

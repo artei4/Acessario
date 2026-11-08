@@ -6,16 +6,16 @@ import { reportMeta } from './reportText.js';
 export function ReportSummary({ report }) {
   const type = getReportType(report);
   return (
-    <li className="report-item">
-      <div className="row row--between">
-        <span className="small strong">
+    <li className="flex flex-col gap-0.5 rounded-lg border border-line px-3 py-2.5">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <span className="text-[13px] font-bold">
           {report.kind === 'facilitator' ? '＋ ' : ''}
           {type.label}
         </span>
         <StatusBadge status={report.status} />
       </div>
-      <span className="tiny muted">{reportMeta(report)}</span>
-      {report.description && <span className="tiny">{report.description}</span>}
+      <span className="text-xs text-ink-soft">{reportMeta(report)}</span>
+      {report.description && <span className="text-xs">{report.description}</span>}
     </li>
   );
 }

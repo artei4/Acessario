@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Button } from '../ui/Button.jsx';
+import { Notice } from '../ui/Card.jsx';
 import { ChoiceGrid } from '../ui/ChoiceGrid.jsx';
+import { TextArea } from '../ui/Field.jsx';
 import { PhotoField } from '../ui/PhotoField.jsx';
 import { Tabs } from '../ui/Tabs.jsx';
 import { LocationPicker } from './LocationPicker.jsx';
@@ -51,7 +53,7 @@ export function ContributeForm({ onCreated }) {
   const typeLabel = result ? getReportType(result.report).short.toLowerCase() : '';
 
   return (
-    <form className="stack" style={{ gap: 12 }} onSubmit={handleSubmit} noValidate>
+    <form className="flex flex-col gap-3" onSubmit={handleSubmit} noValidate>
       <Tabs tabs={KINDS} value={kind} onChange={changeKind} label="Tipo de contribuição" />
       <ChoiceGrid
         name="contribution-type"
@@ -65,37 +67,42 @@ export function ContributeForm({ onCreated }) {
 
       <LocationPicker segments={segments} point={point} onChange={setPoint} hint="Arraste para ajustar" withAddressSearch />
 
-      <div className="field">
-        <label className="sr-only" htmlFor="contribution-description">Descrição</label>
-        <textarea
+      <div>
+        <label className="sr-only" htmlFor="contribution-description">
+          Descrição
+        </label>
+        <TextArea
           id="contribution-description"
-          className="textarea"
+          className="min-h-14"
           placeholder="Descrição (opcional)"
           value={description}
           maxLength={280}
           onChange={(e) => setDescription(e.target.value)}
-          style={{ minHeight: 56 }}
         />
       </div>
       <PhotoField picker={photo} />
 
-      <div className="row row--between small">
-        <span className="muted">Data e horário do registro</span>
-        <span className="strong">{formatDateTime(new Date())}</span>
+      <div className="flex items-center justify-between gap-2 text-[13px]">
+        <span className="text-ink-soft">Data e horário do registro</span>
+        <span className="font-bold tabular-nums">{formatDateTime(new Date())}</span>
       </div>
 
-      {error && <p className="notice notice--danger" role="alert" style={{ margin: 0 }}>{error}</p>}
+      {error && (
+        <Notice tone="danger" role="alert">
+          {error}
+        </Notice>
+      )}
 
       <Button type="submit" size="lg" block loading={submitting}>
         Enviar contribuição
       </Button>
 
       {result && (
-        <p className="notice notice--success" role="status" style={{ margin: 0 }}>
+        <Notice tone="success" role="status">
           {result.impact !== 0
             ? `Seu relato de ${typeLabel} somou ${signed(result.impact)} ${Math.abs(result.impact) === 1 ? 'ponto' : 'pontos'} à nota do ${result.code} (${result.segment.street}).`
             : `Seu relato foi registrado no ${result.code} (${result.segment.street}) e passa a pesar na nota quando for confirmado.`}
-        </p>
+        </Notice>
       )}
     </form>
   );

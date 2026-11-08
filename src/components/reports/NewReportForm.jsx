@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Button } from '../ui/Button.jsx';
+import { Notice } from '../ui/Card.jsx';
 import { ChoiceGrid } from '../ui/ChoiceGrid.jsx';
+import { FieldError, TextArea } from '../ui/Field.jsx';
 import { PhotoField } from '../ui/PhotoField.jsx';
 import { LocationPicker } from './LocationPicker.jsx';
 import { usePhotoPicker } from '../../hooks/usePhotoPicker.js';
@@ -41,35 +43,36 @@ export function NewReportForm({ segments, initialSegment, onSubmit, submitting }
   };
 
   return (
-    <form className="stack" style={{ gap: 14 }} onSubmit={handleSubmit} noValidate>
+    <form className="flex flex-col gap-3.5" onSubmit={handleSubmit} noValidate>
       <LocationPicker segments={segments} point={point} onChange={setPoint} focus={initialSegment?.path} />
-      {errors.point && <span className="field__error">{errors.point}</span>}
+      {errors.point && <FieldError>{errors.point}</FieldError>}
 
       <ChoiceGrid legend="Qual problema você encontrou?" name="problem-type" options={OBSTACLE_OPTIONS} value={type} onChange={setType} />
-      {errors.type && <span className="field__error" role="alert">{errors.type}</span>}
+      {errors.type && <FieldError role="alert">{errors.type}</FieldError>}
 
-      <div className="field">
-        <label className="field__label" htmlFor="report-description">Descrição</label>
-        <textarea
+      <div className="flex flex-col gap-1.5">
+        <label className="text-sm font-bold" htmlFor="report-description">
+          Descrição
+        </label>
+        <TextArea
           id="report-description"
-          className="textarea"
           placeholder="Descreva o problema encontrado"
           value={description}
           maxLength={300}
           onChange={(e) => setDescription(e.target.value)}
         />
-        {errors.description && <span className="field__error">{errors.description}</span>}
+        {errors.description && <FieldError>{errors.description}</FieldError>}
       </div>
 
       <PhotoField picker={photo} />
 
-      <div className="row row--between small">
-        <span className="muted">Data e horário do registro</span>
-        <span className="strong">{formatDateTime(now)}</span>
+      <div className="flex items-center justify-between gap-2 text-[13px]">
+        <span className="text-ink-soft">Data e horário do registro</span>
+        <span className="font-bold tabular-nums">{formatDateTime(now)}</span>
       </div>
-      <p className="notice" style={{ margin: 0 }}>
+      <Notice>
         Seu relato entra como <strong>Não verificado</strong> até outros usuários confirmarem.
-      </p>
+      </Notice>
 
       <Button type="submit" size="lg" block loading={submitting}>
         Enviar relato

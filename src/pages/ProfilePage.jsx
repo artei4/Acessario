@@ -1,7 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
+import { Page } from '../components/layout/Page.jsx';
 import { Badge } from '../components/ui/Badge.jsx';
 import { Button } from '../components/ui/Button.jsx';
-import { Icon } from '../components/ui/Icon.jsx';
+import { Card, SectionTitle } from '../components/ui/Card.jsx';
+import { TextInput } from '../components/ui/Field.jsx';
+import { IconButton } from '../components/ui/IconButton.jsx';
 import { Modal } from '../components/ui/Modal.jsx';
 import { Toggle } from '../components/ui/Toggle.jsx';
 import { ThemeSelector } from '../components/ui/ThemeToggle.jsx';
@@ -33,31 +36,38 @@ function EditProfileModal({ user, onSave, onClose }) {
     try {
       await onSave({ name: name.trim(), profile });
       onClose();
-    } finally {
+    } catch {
       setSaving(false);
     }
   };
   return (
     <Modal title="Editar perfil" onClose={onClose}>
-      <label className="field">
-        <span className="field__label">Nome</span>
-        <input className="input" value={name} onChange={(e) => setName(e.target.value)} maxLength={40} />
+      <label className="flex flex-col gap-1.5">
+        <span className="text-sm font-bold">Nome</span>
+        <TextInput value={name} onChange={(e) => setName(e.target.value)} maxLength={40} />
       </label>
-      <fieldset className="stack" style={{ border: 0, padding: 0, margin: 0, gap: 6 }}>
-        <legend className="field__label" style={{ marginBottom: 6 }}>Perfil de mobilidade</legend>
+      <fieldset className="m-0 flex flex-col gap-1.5 border-0 p-0">
+        <legend className="mb-1.5 text-sm font-bold">Perfil de mobilidade</legend>
         {PROFILE_LIST.map((p) => (
-          <label key={p.id} className="choice">
-            <input type="radio" name="edit-profile" checked={profile === p.id} onChange={() => setProfile(p.id)} />
+          <label
+            key={p.id}
+            className="flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border-[1.5px] border-line p-2.5 text-[13px] font-semibold has-checked:border-brand has-checked:bg-brand-soft"
+          >
+            <input type="radio" name="edit-profile" className="accent-brand" checked={profile === p.id} onChange={() => setProfile(p.id)} />
             <span>
               {p.label}
-              <span className="tiny muted" style={{ display: 'block', fontWeight: 400 }}>{p.description}</span>
+              <span className="block text-xs font-normal text-ink-soft">{p.description}</span>
             </span>
           </label>
         ))}
       </fieldset>
-      <div className="grid-2">
-        <Button variant="secondary" onClick={onClose}>Cancelar</Button>
-        <Button onClick={save} loading={saving} disabled={!name.trim()}>Salvar</Button>
+      <div className="grid grid-cols-2 gap-2">
+        <Button variant="secondary" onClick={onClose}>
+          Cancelar
+        </Button>
+        <Button onClick={save} loading={saving} disabled={!name.trim()}>
+          Salvar
+        </Button>
       </div>
     </Modal>
   );
@@ -102,18 +112,24 @@ export function ProfilePage({ query, navigate }) {
   };
 
   return (
-    <div className="page">
-      <header className="row" style={{ flexWrap: 'nowrap' }}>
-        <span className="avatar" aria-hidden="true">{user.name.charAt(0).toUpperCase()}</span>
-        <div style={{ flex: 1 }}>
-          <h1 style={{ fontSize: 18 }}>{user.name}</h1>
+    <Page>
+      <header className="flex items-center gap-2">
+        <span className="grid size-10 flex-none place-items-center rounded-full bg-brand font-extrabold text-on-brand" aria-hidden="true">
+          {user.name.charAt(0).toUpperCase()}
+        </span>
+        <div className="flex-1">
+          <h1 className="text-lg font-bold">{user.name}</h1>
           <Badge tone="info">{getProfile(user.profile).label}</Badge>
         </div>
-        <Button variant="ghost" onClick={() => setEditing(true)}>Editar</Button>
+        <Button variant="ghost" onClick={() => setEditing(true)}>
+          Editar
+        </Button>
       </header>
 
-      <section className="card stack" style={{ gap: 2 }} aria-labelledby="prefs-title">
-        <h2 id="prefs-title" className="section-title" style={{ marginBottom: 4 }}>Preferências de rota</h2>
+      <Card as="section" className="flex flex-col gap-0.5" aria-labelledby="prefs-title">
+        <SectionTitle id="prefs-title" className="mb-1">
+          Preferências de rota
+        </SectionTitle>
         {PREFERENCES.map((pref) => (
           <Toggle
             key={pref.key}
@@ -123,48 +139,49 @@ export function ProfilePage({ query, navigate }) {
             onChange={(value) => togglePreference(pref.key, value)}
           />
         ))}
-      </section>
+      </Card>
 
-      <section className="card stack" style={{ gap: 8 }} aria-labelledby="theme-title">
-        <h2 id="theme-title" className="section-title">Aparência</h2>
+      <Card as="section" className="flex flex-col gap-2" aria-labelledby="theme-title">
+        <SectionTitle id="theme-title">Aparência</SectionTitle>
         <ThemeSelector />
-        <p className="tiny muted" style={{ margin: 0 }}>Automático segue o tema do seu aparelho.</p>
-      </section>
+        <p className="m-0 text-xs text-ink-soft">Automático segue o tema do seu aparelho.</p>
+      </Card>
 
-      <div className="profile-columns">
-        <section className="card stack" style={{ gap: 6, padding: 12 }} aria-labelledby="recent-title">
-          <h2 id="recent-title" className="small strong">Rotas recentes</h2>
-          {recent.searches.length === 0 && <p className="tiny muted" style={{ margin: 0 }}>Nenhuma busca ainda.</p>}
-          <ul className="list-plain">
+      <div className="grid grid-cols-1 items-start gap-2 min-[381px]:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
+        <Card as="section" className="flex flex-col gap-1.5 p-3" aria-labelledby="recent-title">
+          <h2 id="recent-title" className="text-[13px] font-bold">
+            Rotas recentes
+          </h2>
+          {recent.searches.length === 0 && <p className="m-0 text-xs text-ink-soft">Nenhuma busca ainda.</p>}
+          <ul className="m-0 flex list-none flex-col gap-1.5 p-0">
             {recent.searches.map((s) => (
-              <li key={s.id} className="row" style={{ flexWrap: 'nowrap', gap: 2 }}>
+              <li key={s.id} className="flex items-center gap-0.5">
                 <button
                   type="button"
-                  className="link-button tiny"
-                  style={{ flex: 1 }}
+                  className="flex-1 cursor-pointer text-left text-xs font-semibold text-brand"
                   onClick={() => navigate('/rotas', { de: s.originId, para: s.destinationId })}
                 >
                   {byId.get(s.originId)?.name ?? '…'} → {byId.get(s.destinationId)?.name ?? '…'}
                 </button>
-                <button
-                  type="button"
-                  className="icon-button"
-                  aria-label="Remover das rotas recentes"
+                <IconButton
+                  icon="close"
+                  size={14}
+                  label="Remover das rotas recentes"
                   onClick={() => recent.remove(s.id).catch(() => toast.show('Não foi possível remover.', { tone: 'danger' }))}
-                >
-                  <Icon name="close" size={14} />
-                </button>
+                />
               </li>
             ))}
           </ul>
-        </section>
+        </Card>
 
-        <section className="card stack" style={{ gap: 6, padding: 12 }} aria-labelledby="mine-title">
-          <h2 id="mine-title" className="small strong">Meus relatos</h2>
+        <Card as="section" className="flex flex-col gap-1.5 p-3" aria-labelledby="mine-title">
+          <h2 id="mine-title" className="text-[13px] font-bold">
+            Meus relatos
+          </h2>
           {mine.loading && <LoadingState lines={2} height={48} />}
           {mine.error && <ErrorState error={mine.error} onRetry={mine.reload} />}
-          {!mine.loading && mine.reports.length === 0 && <p className="tiny muted" style={{ margin: 0 }}>Você ainda não relatou nada.</p>}
-          <ul className="list-plain">
+          {!mine.loading && mine.reports.length === 0 && <p className="m-0 text-xs text-ink-soft">Você ainda não relatou nada.</p>}
+          <ul className="m-0 flex list-none flex-col gap-1.5 p-0">
             {mine.reports.map((report) => (
               <MyReportItem
                 key={report.id}
@@ -175,20 +192,26 @@ export function ProfilePage({ query, navigate }) {
               />
             ))}
           </ul>
-        </section>
+        </Card>
       </div>
 
-      <section ref={contributeRef} className="card card--highlight stack" style={{ gap: 12, scrollMarginTop: 12 }} aria-labelledby="contribute-title">
-        <div className="row row--between">
-          <h2 id="contribute-title" style={{ fontSize: 16 }}>Contribuir com o mapa</h2>
-          <span className="tiny muted">Em qualquer lugar</span>
+      <Card as="section" variant="highlight" ref={contributeRef} className="flex scroll-mt-3 flex-col gap-3" aria-labelledby="contribute-title">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 id="contribute-title" className="text-base font-bold">
+            Contribuir com o mapa
+          </h2>
+          <span className="text-xs text-ink-soft">Em qualquer lugar</span>
         </div>
         <ContributeForm onCreated={mine.reload} />
-      </section>
+      </Card>
 
       {apiClient.mode === 'local' && (
-        <Button variant="ghost" onClick={resetDemo}>Restaurar dados de demonstração</Button>
+        <Button variant="ghost" onClick={resetDemo}>
+          Restaurar dados de demonstração
+        </Button>
       )}
-    </div>
+
+      {editing && <EditProfileModal user={user} onSave={saveProfile} onClose={() => setEditing(false)} />}
+    </Page>
   );
 }

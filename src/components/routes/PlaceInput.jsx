@@ -1,8 +1,10 @@
 import { useId, useState } from 'react';
 import { Icon } from '../ui/Icon.jsx';
+import { inputClass } from '../ui/Field.jsx';
+import { cn } from '../../utils/cn.js';
 
 /** Campo de lugar com sugestões (combobox simples e acessível por teclado). */
-export function PlaceInput({ label, iconColor, value, onChange, search }) {
+export function PlaceInput({ label, iconClass, value, onChange, search }) {
   const id = useId();
   const [text, setText] = useState(null); // null = mostrando o lugar escolhido
   const [open, setOpen] = useState(false);
@@ -35,15 +37,17 @@ export function PlaceInput({ label, iconColor, value, onChange, search }) {
   };
 
   return (
-    <div className="field" style={{ position: 'relative' }}>
-      <label className="sr-only" htmlFor={id}>{label}</label>
-      <div className="input-with-icon">
-        <span className="input-with-icon__icon" style={{ color: iconColor }}>
+    <div className="relative flex flex-col gap-1.5">
+      <label className="sr-only" htmlFor={id}>
+        {label}
+      </label>
+      <div className="relative">
+        <span className={cn('pointer-events-none absolute top-1/2 left-3 flex -translate-y-1/2', iconClass)}>
           <Icon name="pin" size={18} />
         </span>
         <input
           id={id}
-          className="input"
+          className={cn(inputClass, 'pl-[38px]')}
           role="combobox"
           aria-expanded={open && options.length > 0}
           aria-controls={`${id}-list`}
@@ -56,7 +60,12 @@ export function PlaceInput({ label, iconColor, value, onChange, search }) {
             setActive(0);
             e.target.select();
           }}
-          onBlur={() => setTimeout(() => { setOpen(false); setText(null); }, 120)}
+          onBlur={() =>
+            setTimeout(() => {
+              setOpen(false);
+              setText(null);
+            }, 120)
+          }
           onChange={(e) => {
             setText(e.target.value);
             setOpen(true);
@@ -66,18 +75,18 @@ export function PlaceInput({ label, iconColor, value, onChange, search }) {
         />
       </div>
       {open && options.length > 0 && (
-        <ul id={`${id}-list`} role="listbox" className="suggestions" style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 5 }}>
+        <ul id={`${id}-list`} role="listbox" className="absolute top-full right-0 left-0 z-30 m-0 mt-1 list-none rounded-lg border border-line bg-surface p-1 shadow-soft">
           {options.map((place, i) => (
             <li key={place.id} id={`${id}-opt-${i}`} role="option" aria-selected={i === active}>
               <button
                 type="button"
                 tabIndex={-1}
-                style={i === active ? { background: 'var(--blue-50)' } : undefined}
+                className={cn('w-full cursor-pointer rounded-md px-2.5 py-2 text-left hover:bg-brand-soft', i === active && 'bg-brand-soft')}
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => choose(place)}
               >
-                <span className="strong small">{place.name}</span>
-                <span className="tiny muted"> · {place.neighborhood}</span>
+                <span className="text-[13px] font-bold">{place.name}</span>
+                <span className="text-xs text-ink-soft"> · {place.neighborhood}</span>
               </button>
             </li>
           ))}

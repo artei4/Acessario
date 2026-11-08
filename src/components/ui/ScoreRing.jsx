@@ -14,7 +14,12 @@ export function ScoreRing({ score, size = 52, level = scoreLevel(score) }) {
   const circumference = 2 * Math.PI * r;
   const value = score ?? 0;
   return (
-    <div className="score-ring" style={{ width: size, height: size }} role="img" aria-label={score === null ? 'Sem nota' : `Nota ${score} de 100`}>
+    <div
+      className="relative flex-none"
+      style={{ width: size, height: size }}
+      role="img"
+      aria-label={score === null ? 'Sem nota' : `Nota ${score} de 100`}
+    >
       <svg width={size} height={size} aria-hidden="true">
         <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--track)" strokeWidth={stroke} />
         <circle
@@ -29,7 +34,9 @@ export function ScoreRing({ score, size = 52, level = scoreLevel(score) }) {
           transform={`rotate(-90 ${size / 2} ${size / 2})`}
         />
       </svg>
-      <span className="score-ring__value" aria-hidden="true">{score ?? '–'}</span>
+      <span className="absolute inset-0 grid place-items-center text-base font-extrabold" aria-hidden="true">
+        {score ?? '–'}
+      </span>
     </div>
   );
 }

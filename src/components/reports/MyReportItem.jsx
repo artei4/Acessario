@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { StatusBadge } from '../ui/Badge.jsx';
 import { Button } from '../ui/Button.jsx';
-import { Icon } from '../ui/Icon.jsx';
+import { IconButton } from '../ui/IconButton.jsx';
 import { Modal } from '../ui/Modal.jsx';
+import { TextArea } from '../ui/Field.jsx';
 import { getReportType } from '../../domain/reportTypes.js';
 import { formatShortDate } from '../../utils/format.js';
 import { tallyText } from './reportText.js';
@@ -12,6 +13,7 @@ export function MyReportItem({ report, onUpdate, onDelete, busy }) {
   const [mode, setMode] = useState(null); // 'edit' | 'delete' | null
   const [description, setDescription] = useState(report.description ?? '');
   const type = getReportType(report);
+  const totalVotes = report.tally.confirm + report.tally.incorrect + report.tally.resolved;
 
   const save = async () => {
     await onUpdate(report.id, { description: description.trim() });
@@ -19,48 +21,51 @@ export function MyReportItem({ report, onUpdate, onDelete, busy }) {
   };
 
   return (
-    <li className="report-item">
-      <div className="row row--between" style={{ flexWrap: 'nowrap' }}>
-        <span className="small strong">{type.short}</span>
-        <div className="row" style={{ gap: 0, flexWrap: 'nowrap' }}>
-          <button type="button" className="icon-button" aria-label={`Editar relato: ${type.label}`} onClick={() => setMode('edit')}>
-            <Icon name="edit" size={16} />
-          </button>
-          <button type="button" className="icon-button" aria-label={`Excluir relato: ${type.label}`} onClick={() => setMode('delete')}>
-            <Icon name="trash" size={16} />
-          </button>
+    <li className="flex flex-col gap-1 rounded-lg border border-line px-3 py-2.5">
+      <div className="flex items-center justify-between gap-1">
+        <span className="text-[13px] font-bold">{type.short}</span>
+        <div className="flex">
+          <IconButton icon="edit" label={`Editar relato: ${type.label}`} onClick={() => setMode('edit')} />
+          <IconButton icon="trash" label={`Excluir relato: ${type.label}`} onClick={() => setMode('delete')} />
         </div>
       </div>
       <span>
         <StatusBadge status={report.status} />
       </span>
-      <span className="tiny muted">
+      <span className="text-xs text-ink-soft">
         {tallyText(report)} · {formatShortDate(report.createdAt)}
       </span>
-      {report.segmentLabel && <span className="tiny muted">{report.segmentLabel}</span>}
+      {report.segmentLabel && <span className="text-xs text-ink-soft">{report.segmentLabel}</span>}
 
       {mode === 'edit' && (
         <Modal title={`Editar relato: ${type.label}`} onClose={() => setMode(null)}>
-          <label className="field">
-            <span className="field__label">Descrição</span>
-            <textarea className="textarea" value={description} maxLength={280} onChange={(e) => setDescription(e.target.value)} />
+          <label className="flex flex-col gap-1.5">
+            <span className="text-sm font-bold">Descrição</span>
+            <TextArea value={description} maxLength={280} onChange={(e) => setDescription(e.target.value)} />
           </label>
-          <div className="grid-2">
-            <Button variant="secondary" onClick={() => setMode(null)}>Cancelar</Button>
-            <Button onClick={save} loading={busy}>Salvar</Button>
+          <div className="grid grid-cols-2 gap-2">
+            <Button variant="secondary" onClick={() => setMode(null)}>
+              Cancelar
+            </Button>
+            <Button onClick={save} loading={busy}>
+              Salvar
+            </Button>
           </div>
         </Modal>
       )}
 
       {mode === 'delete' && (
         <Modal title="Excluir relato?" onClose={() => setMode(null)}>
-          <p className="small" style={{ margin: 0 }}>
-            O relato “{type.label}” e as {report.tally.confirm + report.tally.incorrect + report.tally.resolved} avaliações dele
-            serão removidos, e a nota do trecho será recalculada. Isso não pode ser desfeito.
+          <p className="m-0 text-[13px]">
+            O relato “{type.label}” e as {totalVotes} avaliações dele serão removidos, e a nota do trecho será recalculada. Isso não pode ser desfeito.
           </p>
-          <div className="grid-2">
-            <Button variant="secondary" onClick={() => setMode(null)}>Cancelar</Button>
-            <Button variant="danger" onClick={() => onDelete(report.id)} loading={busy}>Excluir</Button>
+          <div className="grid grid-cols-2 gap-2">
+            <Button variant="secondary" onClick={() => setMode(null)}>
+              Cancelar
+            </Button>
+            <Button variant="danger" onClick={() => onDelete(report.id)} loading={busy}>
+              Excluir
+            </Button>
           </div>
         </Modal>
       )}

@@ -4,7 +4,7 @@ import { App } from './App.jsx';
 import { UserProvider } from './context/UserContext.jsx';
 import { ToastProvider } from './context/ToastContext.jsx';
 import { ThemeProvider } from './context/ThemeContext.jsx';
-import './styles/global.css';
+import './styles/index.css';
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
