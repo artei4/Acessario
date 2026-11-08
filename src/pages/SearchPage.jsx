@@ -16,6 +16,13 @@ import { useRouteOptions } from '../hooks/useRouteOptions.js';
 
 const s = (n) => (n === 1 ? '' : 's');
 
+/** Mesmo lugar: mesmo id, mesmo objeto do OpenStreetMap ou mesmas coordenadas. */
+function samePlace(a, b) {
+  if (a.id && b.id) return a.id === b.id;
+  if (a.osmId && b.osmId) return a.osmId === b.osmId;
+  return Math.abs(a.lat - b.lat) < 1e-5 && Math.abs(a.lon - b.lon) < 1e-5;
+}
+
 function RecentReportsCard({ recent, loading }) {
   if (loading) return <Skeleton className="h-[76px]" />;
   if (!recent) return null;
@@ -45,7 +52,7 @@ function RecentReportsCard({ recent, loading }) {
 export function SearchPage({ navigate }) {
   const { user } = useCurrentUser();
   const toast = useToast();
-  const { byId, search, places } = usePlaces();
+  const { byId, search, places, ensure } = usePlaces();
   const { searches, record } = useRecentSearches(user.id);
   const [origin, setOrigin] = useState(null);
   const [destination, setDestination] = useState(null);
@@ -67,17 +74,27 @@ export function SearchPage({ navigate }) {
   const handleSubmit = async (event) => {
     event.preventDefault();
     if (!origin || !destination) return toast.show('Escolha a origem e o destino.', { tone: 'danger' });
-    if (origin.id === destination.id) return toast.show('Origem e destino precisam ser diferentes.', { tone: 'danger' });
+    if (samePlace(origin, destination)) return toast.show('Origem e destino precisam ser diferentes.', { tone: 'danger' });
     setSubmitting(true);
+    let savedOrigin;
+    let savedDestination;
     try {
-      await record(origin.id, destination.id);
+      // lugares vindos da busca de endereços ainda não existem na API
+      [savedOrigin, savedDestination] = await Promise.all([ensure(origin), ensure(destination)]);
+    } catch (error) {
+      setSubmitting(false);
+      return toast.show(error.userMessage ?? 'Não foi possível salvar os lugares.', { tone: 'danger' });
+    }
+    try {
+      await record(savedOrigin.id, savedDestination.id);
     } catch {
       // a busca recente é um extra: não impede de ver as rotas
     }
-    navigate('/rotas', { de: origin.id, para: destination.id });
+    navigate('/rotas', { de: savedOrigin.id, para: savedDestination.id });
   };
 
-  const noRoutes = origin && destination && !loading && evaluations.length === 0 && origin.id !== destination.id;
+  const bothChosen = origin && destination && !samePlace(origin, destination);
+  const noSavedRoutes = bothChosen && !loading && evaluations.length === 0;
 
   return (
     <Page>
@@ -102,8 +119,10 @@ export function SearchPage({ navigate }) {
         </Button>
       </form>
 
-      {noRoutes ? (
-        <Notice tone="warning">Ainda não há rotas mapeadas entre esses lugares. Você pode ajudar contribuindo com o mapa.</Notice>
+      {noSavedRoutes ? (
+        <Notice>
+          Ainda não há rotas salvas entre esses lugares. Ao buscar, o app calcula caminhos a pé pelo mapa do OpenStreetMap, e você pode relatar como está cada trecho.
+        </Notice>
       ) : (
         <RecentReportsCard recent={recent} loading={loading} />
       )}

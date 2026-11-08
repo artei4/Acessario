@@ -88,7 +88,9 @@ export function RouteCard({ evaluation, selected, onSelect, onOpen }) {
       <p className="m-0 text-xs text-ink-soft">
         {evaluation.sufficient
           ? `Confiabilidade ${evaluation.reliability} · última verificação ${formatRelativeDays(evaluation.lastVerifiedAt)}`
-          : `Só ${Math.round(evaluation.verifiedShare * 100)}% do caminho foi verificado. Nota estimada: ${evaluation.estimatedScore}.`}
+          : evaluation.verifiedShare === 0
+            ? 'Nenhum trecho foi verificado ainda. Se passar por aqui, relate como está o caminho.'
+            : `Só ${Math.round(evaluation.verifiedShare * 100)}% do caminho foi verificado. Nota estimada: ${evaluation.estimatedScore}.`}
       </p>
 
       <Button variant="secondary" size="sm" onClick={() => onOpen(evaluation)} aria-label={`Ver resumo: ${summary}`}>

@@ -29,6 +29,9 @@ function PhotoStrip({ reports }) {
   );
 }
 
+const UNKNOWN = 'Não informado';
+const yesNo = (value) => (value === null || value === undefined ? UNKNOWN : value ? 'Sim' : 'Não');
+
 function Attribute({ label, value }) {
   return (
     <div>
@@ -57,14 +60,20 @@ export function SegmentDetail({ evaluation, routeName, onReport }) {
       <div className="flex items-center gap-3.5">
         <ScoreRing score={score} />
         <dl className="m-0 grid flex-1 grid-cols-2 gap-x-3 gap-y-0.5 text-[13px]">
-          <Attribute label="Largura" value={formatWidth(segment.widthM)} />
-          <Attribute label="Inclinação" value={`${segment.slopePct}%`} />
-          <Attribute label="Escadas" value={segment.hasStairs ? 'Sim' : 'Não'} />
-          <Attribute label="Rampas" value={segment.hasRamps ? 'Sim' : 'Não'} />
-          <Attribute label="Piso" value={segment.floor === 'regular' ? 'Regular' : 'Irregular'} />
-          <Attribute label="Piso tátil" value={segment.tactile ? 'Sim' : 'Não'} />
+          <Attribute label="Largura" value={segment.widthM == null ? UNKNOWN : formatWidth(segment.widthM)} />
+          <Attribute label="Inclinação" value={segment.slopePct == null ? UNKNOWN : `${segment.slopePct}%`} />
+          <Attribute label="Escadas" value={yesNo(segment.hasStairs)} />
+          <Attribute label="Rampas" value={yesNo(segment.hasRamps)} />
+          <Attribute label="Piso" value={segment.floor == null ? UNKNOWN : segment.floor === 'regular' ? 'Regular' : 'Irregular'} />
+          <Attribute label="Piso tátil" value={yesNo(segment.tactile)} />
         </dl>
       </div>
+
+      {segment.widthM == null && reports.length === 0 && (
+        <Notice>
+          Este trecho foi traçado pelo mapa do OpenStreetMap e ainda não tem informações de acessibilidade. Se você passar por aqui, relate o que encontrou.
+        </Notice>
+      )}
 
       {blocked && <Notice tone="danger">Trecho impedido para o seu perfil: {blockReasons.join(', ')}.</Notice>}
 

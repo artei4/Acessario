@@ -12,6 +12,8 @@ export const config = {
   currentUserId: env.VITE_USER_ID ?? 'u-jose',
   /** API pública de geocodificação (OpenStreetMap). */
   geocodingUrl: 'https://nominatim.openstreetmap.org',
+  /** Roteador a pé do OpenStreetMap (OSRM da FOSSGIS, o mesmo do site openstreetmap.org). */
+  routingUrl: env.VITE_ROUTING_URL || 'https://routing.openstreetmap.de/routed-foot',
   /**
    * Mapa: "osm" (padrão) usa o OpenStreetMap com Leaflet, sem chave e sem custo;
    * "schematic" usa o mapa esquemático em SVG, que funciona sem internet.

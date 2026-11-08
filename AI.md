@@ -90,11 +90,23 @@ A pessoa perguntou se teria que pagar pelo Google Cloud. A IA pesquisou os preç
 - O pacote `leaflet` não pôde ser instalado aqui. A IA criou um Leaflet simulado e confirmou que o app desenha 12 linhas (2 tracejadas) na tela 3, seleciona a rota ao tocar na linha, marca o ponto por clique, arraste e setas, destrói o mapa ao sair da tela, usa os tiles do OpenStreetMap com o crédito obrigatório e aplica o filtro no modo escuro.
 - Durante a troca, um script de substituição corrompeu o `src/config/env.js`. A IA restaurou o arquivo pelo git e refez a edição.
 
+## Quinta rodada: rotas em qualquer lugar do Rio
+
+A pessoa enviou o código ao GitHub e pediu duas coisas: rotas entre quaisquer pontos do Rio (ex.: do Americas Shopping até o McDonald's do Recreio) e a correção do botão de voltar, que ficava em cima do zoom do mapa.
+
+- O commit da pessoa no GitHub (com `.env.http` e `src/styles/global.css` antigos) foi trazido antes de qualquer mudança. Esses arquivos não são usados pelo app e foram mantidos, já que a decisão de apagá-los é da pessoa.
+- **Busca no Rio inteiro:** o campo de origem/destino sugere os lugares conhecidos e busca qualquer lugar ou endereço na Nominatim, só quando a pessoa pede. Lugares novos são gravados na API (com `osmId`, para não duplicar).
+- **Cálculo de rotas:** sem rota salva entre dois lugares, o app consulta o roteador a pé do OpenStreetMap (OSRM) e grava rotas e trechos na API. A conversão (`domain/routePlanning.js`) é uma função pura e testada. Cálculos simultâneos do mesmo trajeto são reaproveitados, porque o modo estrito do React rodaria o efeito duas vezes e gravaria rotas em dobro.
+- **Trechos sem levantamento:** as regras de nota passaram a ignorar atributos desconhecidos (`null`) em vez de tratá-los como ruins. A tela mostra "Não informado" e convida a relatar.
+- **Zoom:** o controle de zoom do Leaflet foi para o canto inferior direito.
+- **Verificação:** fluxo completo no navegador com o servidor local, simulando as respostas da Nominatim e do roteador. Foram conferidos a busca dos dois lugares, a gravação de 1 lugar novo e 2 rotas com trechos, a não repetição do cálculo ao recarregar, o aviso nos trechos novos e um relato gravado num trecho calculado.
+
 ## Limitações do ambiente
 
 - O ambiente onde o código foi gerado **não tinha acesso à internet para `npm install`**. O projeto não foi executado com o Vite em si: foi validado com esbuild e com o compilador do Tailwind v4 chamado diretamente, mais Playwright. Ao rodar `npm install && npm start` pela primeira vez, vale conferir se as versões em `package.json` resolvem sem conflito.
 - O **Leaflet real** e os tiles do OpenStreetMap não puderam ser carregados aqui (só a versão simulada). Na primeira execução, vale olhar o mapa nas telas 3, 4, 5B e 6, no claro e no escuro.
 - O pacote `@vercel/blob` não pôde ser instalado. O código usa só `put`, `list` e `del`, que são documentados, mas a gravação real no Blob só pode ser conferida no site publicado (cabeçalho `X-AcessaRio-Store: blob`).
+- A **Nominatim** e o **roteador OSRM** não puderam ser chamados a partir do ambiente de teste (as respostas foram simuladas no formato documentado). Na primeira busca real, vale conferir um trajeto longo e um curto.
 - A integração com a **Nominatim** não pôde ser chamada a partir do ambiente de teste. O código trata falha de rede com mensagem e o mapa continua funcionando por toque.
 
 ## O que precisa de revisão humana

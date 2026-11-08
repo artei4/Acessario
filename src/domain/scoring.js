@@ -29,7 +29,10 @@ export function segmentCode(segment) {
   return `Trecho ${String(segment.order).padStart(2, '0')}`;
 }
 
-/** Pontos vindos do levantamento base do trecho (atributos físicos). */
+/** Atributo sem levantamento (trechos calculados pelo roteador ainda não verificados). */
+const known = (value) => value !== null && value !== undefined;
+
+/** Pontos vindos do levantamento base do trecho (atributos físicos). Atributos desconhecidos não somam nem tiram. */
 export function attributeBreakdown(segment, profile, preferences = {}) {
   const w = profile.weights;
   const slopeWeight = w.slope * (preferences.preferFlat ? 1.5 : 1);
@@ -39,23 +42,35 @@ export function attributeBreakdown(segment, profile, preferences = {}) {
     if (value !== 0) items.push({ label, points: value, source: 'levantamento' });
   };
 
-  if (segment.hasStairs) add('Escadas', -45 * w.stairs);
-  else add('Sem escadas', 8 * w.stairs);
+  if (known(segment.hasStairs)) {
+    if (segment.hasStairs) add('Escadas', -45 * w.stairs);
+    else add('Sem escadas', 8 * w.stairs);
+  }
 
-  if (segment.hasRamps) add('Rampa adequada', 10 * w.ramps);
-  else add('Sem rampa', -6 * w.ramps);
+  if (known(segment.hasRamps)) {
+    if (segment.hasRamps) add('Rampa adequada', 10 * w.ramps);
+    else add('Sem rampa', -6 * w.ramps);
+  }
 
-  if (segment.widthM >= 1.4) add('Calçada larga', 6 * w.width);
-  else if (segment.widthM < 1.2) add('Calçada estreita', -15 * w.width);
+  if (known(segment.widthM)) {
+    if (segment.widthM >= 1.4) add('Calçada larga', 6 * w.width);
+    else if (segment.widthM < 1.2) add('Calçada estreita', -15 * w.width);
+  }
 
-  if (segment.floor === 'regular') add('Piso regular', 4 * w.floor);
-  else add('Piso irregular', -8 * w.floor);
+  if (known(segment.floor)) {
+    if (segment.floor === 'regular') add('Piso regular', 4 * w.floor);
+    else add('Piso irregular', -8 * w.floor);
+  }
 
-  if (segment.tactile) add('Piso tátil', 10 * w.tactile);
-  else add('Sem piso tátil', -5 * w.tactile);
+  if (known(segment.tactile)) {
+    if (segment.tactile) add('Piso tátil', 10 * w.tactile);
+    else add('Sem piso tátil', -5 * w.tactile);
+  }
 
-  const excessSlope = Math.max(0, segment.slopePct - 2);
-  add(`Inclinação ${segment.slopePct}%`, -excessSlope * 1.5 * slopeWeight);
+  if (known(segment.slopePct)) {
+    const excessSlope = Math.max(0, segment.slopePct - 2);
+    add(`Inclinação ${segment.slopePct}%`, -excessSlope * 1.5 * slopeWeight);
+  }
 
   return items;
 }
@@ -101,7 +116,7 @@ export function evaluateSegment(segment, reports, { profileId, preferences = {},
     delayMin += round((segment.slopePct - 5) * 0.7 * profile.weights.slope);
     delayReasons.add('inclinação');
   }
-  if (segment.floor !== 'regular') {
+  if (known(segment.floor) && segment.floor !== 'regular') {
     delayMin += round(2 * profile.weights.floor);
     delayReasons.add('piso irregular');
   }
@@ -179,7 +194,7 @@ export function evaluateRoute(route, segments, reports, context = {}) {
   const delayReasons = [...new Set(segmentEvaluations.flatMap((e) => e.delayReasons))];
   const estimatedScore = combineScores(segmentEvaluations, 'score');
   const originalScore = combineScores(segmentEvaluations, 'baseScore');
-  const maxSlope = Math.max(...ordered.map((s) => s.slopePct));
+  const maxSlope = Math.max(0, ...ordered.map((s) => s.slopePct ?? 0));
   const steepLength = ordered.filter((s) => s.slopePct >= 6).reduce((sum, s) => sum + s.lengthM, 0);
   const surveyDates = ordered.map((s) => s.surveyedAt).filter(Boolean).sort();
 

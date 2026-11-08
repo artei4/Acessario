@@ -21,7 +21,8 @@ export function RoutesPage({ query, navigate, back }) {
   // sem trajeto na URL, usa a última busca
   const originId = query.de ?? searches[0]?.originId;
   const destinationId = query.para ?? searches[0]?.destinationId;
-  const { evaluations, loading, error, reload } = useRouteOptions(originId, destinationId);
+  // plan: sem rota salva entre os dois lugares, calcula rotas a pé pelo OpenStreetMap e grava na API
+  const { evaluations, loading, error, reload } = useRouteOptions(originId, destinationId, { plan: true });
   const [selectedId, setSelectedId] = useState(null);
 
   useEffect(() => {
@@ -91,7 +92,12 @@ export function RoutesPage({ query, navigate, back }) {
         </p>
       )}
 
-      {loading && <LoadingState lines={3} height={150} />}
+      {loading && (
+        <div className="flex flex-col gap-2" role="status">
+          <p className="m-0 text-[13px] text-ink-soft">Procurando rotas a pé… Na primeira busca de um trajeto, o app calcula os caminhos pelo mapa do OpenStreetMap.</p>
+          <LoadingState lines={3} height={150} />
+        </div>
+      )}
       {error && <ErrorState error={error} onRetry={reload} />}
       {!loading && !error && evaluations.length === 0 && (
         <EmptyState title="Ainda não há rotas mapeadas para esse trajeto">

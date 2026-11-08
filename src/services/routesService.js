@@ -19,6 +19,17 @@ export const routesService = {
   },
 };
 
+/** Grava uma rota planejada e seus trechos. */
+export async function saveRoutePlan({ route, segments }) {
+  const created = await api.post('/routes', { ...route, createdAt: new Date().toISOString() });
+  const savedSegments = [];
+  // um por vez, para manter a ordem e não sobrecarregar a API
+  for (const segment of segments) {
+    savedSegments.push(await api.post('/segments', { ...segment, routeId: created.id }));
+  }
+  return { route: created, segments: savedSegments };
+}
+
 export const segmentsService = {
   listByRoutes: (routeIds) =>
     routeIds.length === 0 ? Promise.resolve([]) : api.get('/segments', { routeId: routeIds, _sort: 'order' }),

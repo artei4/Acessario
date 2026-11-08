@@ -10,12 +10,12 @@ import { useEvaluationContext } from './useEvaluationContext.js';
  * Rotas entre dois lugares, avaliadas e ordenadas para o perfil do usuário.
  * Os dados vêm da API uma vez; trocar perfil ou preferências só recalcula (useMemo).
  */
-export function useRouteOptions(originId, destinationId) {
+export function useRouteOptions(originId, destinationId, { plan = false } = {}) {
   const context = useEvaluationContext();
   const enabled = Boolean(originId && destinationId && originId !== destinationId);
   const { data, error, loading, reload } = useAsync(
-    () => networkService.loadBetween(originId, destinationId),
-    [originId, destinationId],
+    () => networkService.loadBetween(originId, destinationId, { plan }),
+    [originId, destinationId, plan],
     { enabled },
   );
 

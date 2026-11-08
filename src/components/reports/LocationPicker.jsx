@@ -98,7 +98,7 @@ export function LocationPicker({ segments, point, onChange, hint = 'Arraste para
               Buscar
             </Button>
           </div>
-          {geocoding.error && <FieldError>{geocoding.error.message}. Marque o ponto no mapa.</FieldError>}
+          {geocoding.error && <FieldError>{geocoding.error.userMessage} Marque o ponto no mapa.</FieldError>}
           {geocoding.searched && !geocoding.error && geocoding.results.length === 0 && (
             <span className="text-xs text-ink-soft">Nenhum endereço encontrado na área mapeada.</span>
           )}

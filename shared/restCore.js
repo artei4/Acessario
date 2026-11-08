@@ -18,6 +18,8 @@
 
 /** Ao remover um item, remove também os dependentes: coleção -> [[coleçãoFilha, campoFK]] */
 export const CASCADE = {
+  routes: [['segments', 'routeId']],
+  segments: [['reports', 'segmentId']],
   reports: [['votes', 'reportId']],
   users: [
     ['votes', 'userId'],
@@ -31,6 +33,9 @@ export const REQUIRED_FIELDS = {
   votes: ['reportId', 'userId', 'type'],
   searches: ['userId', 'originId', 'destinationId'],
   users: ['name'],
+  places: ['name', 'lat', 'lon'],
+  routes: ['originId', 'destinationId'],
+  segments: ['routeId', 'path'],
 };
 
 const ID_PREFIX = {
@@ -38,6 +43,9 @@ const ID_PREFIX = {
   votes: 'vot',
   searches: 'src',
   users: 'u',
+  places: 'p',
+  routes: 'r',
+  segments: 's',
 };
 
 export class HttpError extends Error {
