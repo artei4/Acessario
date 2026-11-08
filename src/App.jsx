@@ -56,8 +56,8 @@ export function App() {
           <ErrorState error={error} onRetry={reload} />
           {config.apiMode === 'http' && (
             <p className="notice small">
-              O modo servidor está ligado, mas a API em {config.apiUrl} não respondeu. Rode{' '}
-              <code>npm run dev:http</code>, ou use apenas <code>npm run dev</code> para o app funcionar sem servidor.
+              A API em {config.apiUrl} não respondeu. Rode <code>npm start</code> (API + app) ou{' '}
+              <code>npm run api</code> em outro terminal. Para testar sem servidor, use <code>npm run dev:demo</code>.
             </p>
           )}
         </div>
