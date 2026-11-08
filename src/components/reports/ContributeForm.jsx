@@ -1,0 +1,102 @@
+import { useState } from 'react';
+import { Button } from '../ui/Button.jsx';
+import { ChoiceGrid } from '../ui/ChoiceGrid.jsx';
+import { PhotoField } from '../ui/PhotoField.jsx';
+import { Tabs } from '../ui/Tabs.jsx';
+import { LocationPicker } from './LocationPicker.jsx';
+import { usePhotoPicker } from '../../hooks/usePhotoPicker.js';
+import { useContribution } from '../../hooks/useContribution.js';
+import { FACILITATOR_OPTIONS, OBSTACLE_OPTIONS, getReportType } from '../../domain/reportTypes.js';
+import { formatDateTime, signed } from '../../utils/format.js';
+
+const KINDS = [
+  { id: 'facilitator', label: 'Facilita a passagem', tone: 'success' },
+  { id: 'obstacle', label: 'Dificulta a passagem', tone: 'danger' },
+];
+
+/** "Contribuir com o mapa" (tela 6): relato livre em qualquer trecho mapeado. */
+export function ContributeForm({ onCreated }) {
+  const { segments, locate, submit, submitting } = useContribution({ onCreated });
+  const [kind, setKind] = useState('facilitator');
+  const [type, setType] = useState('');
+  const [point, setPoint] = useState(null);
+  const [description, setDescription] = useState('');
+  const [error, setError] = useState(null);
+  const [result, setResult] = useState(null);
+  const photo = usePhotoPicker();
+
+  const changeKind = (next) => {
+    setKind(next);
+    setType('');
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    setResult(null);
+    if (!type) return setError('Escolha o que você encontrou.');
+    if (!point || !locate(point)) return setError('Marque no mapa um ponto sobre um dos trechos mapeados.');
+    setError(null);
+    try {
+      const outcome = await submit({ point, kind, type, description, photo: photo.photo });
+      setResult(outcome);
+      setType('');
+      setDescription('');
+      setPoint(null);
+      photo.clear();
+    } catch {
+      // a mensagem de erro já aparece no aviso flutuante
+    }
+  };
+
+  const typeLabel = result ? getReportType(result.report).short.toLowerCase() : '';
+
+  return (
+    <form className="stack" style={{ gap: 12 }} onSubmit={handleSubmit} noValidate>
+      <Tabs tabs={KINDS} value={kind} onChange={changeKind} label="Tipo de contribuição" />
+      <ChoiceGrid
+        name="contribution-type"
+        options={kind === 'facilitator' ? FACILITATOR_OPTIONS : OBSTACLE_OPTIONS}
+        value={type}
+        onChange={setType}
+        tone={kind === 'facilitator' ? 'success' : undefined}
+        columns={3}
+        legend={kind === 'facilitator' ? 'O que facilita?' : 'O que dificulta?'}
+      />
+
+      <LocationPicker segments={segments} point={point} onChange={setPoint} hint="Arraste para ajustar" withAddressSearch />
+
+      <div className="field">
+        <label className="sr-only" htmlFor="contribution-description">Descrição</label>
+        <textarea
+          id="contribution-description"
+          className="textarea"
+          placeholder="Descrição (opcional)"
+          value={description}
+          maxLength={280}
+          onChange={(e) => setDescription(e.target.value)}
+          style={{ minHeight: 56 }}
+        />
+      </div>
+      <PhotoField picker={photo} />
+
+      <div className="row row--between small">
+        <span className="muted">Data e horário do registro</span>
+        <span className="strong">{formatDateTime(new Date())}</span>
+      </div>
+
+      {error && <p className="notice notice--danger" role="alert" style={{ margin: 0 }}>{error}</p>}
+
+      <Button type="submit" size="lg" block loading={submitting}>
+        Enviar contribuição
+      </Button>
+
+      {result && (
+        <p className="notice notice--success" role="status" style={{ margin: 0 }}>
+          {result.impact !== 0
+            ? `Seu relato de ${typeLabel} somou ${signed(result.impact)} ${Math.abs(result.impact) === 1 ? 'ponto' : 'pontos'} à nota do ${result.code} (${result.segment.street}).`
+            : `Seu relato foi registrado no ${result.code} (${result.segment.street}) e passa a pesar na nota quando for confirmado.`}
+        </p>
+      )}
+    </form>
+  );
+}
