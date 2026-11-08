@@ -56,9 +56,34 @@ Depois de testar, a pessoa pediu:
 1. **Não depender de servidor por enquanto.** O app abria com "Não foi possível falar com o servidor" porque o modo padrão era `http`. O padrão passou a ser `local` (núcleo REST no navegador, com `localStorage`); o modo servidor continua disponível com `npm run dev:http`.
 2. **Escolher entre modo claro e escuro.** Foi criado `ThemeContext` (claro, escuro ou automático, salvo no navegador), um botão de sol/lua nas telas 1 e 2 e a seção "Aparência" no Perfil. Para isso, as cores fixas do CSS e do mapa foram trocadas por variáveis, e o tema escuro redefine só essas variáveis. As telas foram conferidas no escuro por captura de tela.
 
+## Terceira rodada de pedidos
+
+A pessoa pediu: o servidor de volta, o mapa do **Google Maps** (Maps JavaScript API) e estilização com **Tailwind CSS**. No meio do trabalho, avisou que o app já estava na Vercel (projeto `acessario`) e no GitHub (`artei4/Acessario`).
+
+1. **Servidor de volta.** O modo `http` voltou a ser o padrão (`npm start` sobe API + app); o modo sem servidor virou `npm run dev:demo`.
+2. **Tailwind CSS v4.** O `global.css` foi substituído por `src/styles/index.css`. As cores do tema continuaram como variáveis CSS e foram registradas como cores do Tailwind (`@theme inline`). Assim, o modo escuro funciona sem `dark:` em cada classe. Padrões repetidos viraram componentes (`Card`, `Notice`, `Field`, `Page`…), e todas as telas foram reescritas com classes utilitárias.
+3. **Google Maps.** Carregador oficial do Google, hooks `useGoogleMapsApi`/`useGoogleMap` e o componente `GoogleRouteMap` (Polylines por trecho, AdvancedMarkerElement, alfinete arrastável, tema escuro). Sem chave, o app usa o mapa esquemático antigo, então nada quebra enquanto a chave não é criada.
+4. **Servidor na Vercel.** A IA explicou que a Vercel não roda o `server/index.js` e propôs duas opções. Seguiu com a recomendada, como havia avisado: a API como Vercel Function (`api/index.js`) e os dados no Vercel Blob. Pela integração com a Vercel, a IA criou o armazenamento Blob `acessario-dados` ligado ao projeto, o que gerou a variável `BLOB_READ_WRITE_TOKEN`.
+
+### Como foi verificado
+
+- `npm test`: 26 testes, incluindo a leitura de rotas da função da Vercel e o armazenamento Blob, com um Blob simulado.
+- Fluxo completo no navegador automatizado contra o servidor local, com a nova interface, conferindo o banco depois de cada passo.
+- A função da Vercel foi chamada diretamente com requisições simuladas: GET, POST, PATCH com corpo em texto, DELETE pela URL original, 422 e OPTIONS.
+- **Google Maps com uma API simulada**: o ambiente não acessa os servidores do Google. Por isso, a IA criou uma versão falsa de `google.maps` (Map, Polyline, AdvancedMarkerElement, PinElement…) e confirmou que o app desenha 12 trechos na tela 3, seleciona a rota ao clicar na linha, marca o ponto ao clicar no mapa e ao arrastar o alfinete, e usa o esquema escuro no modo escuro.
+- Capturas de tela de todas as telas no claro e no escuro, comparadas com a versão anterior.
+
+### Correções durante esta rodada
+
+- O compilador do Tailwind usado nos testes não reconhecia classes entre aspas simples nos objetos de variantes. O problema era do script de teste, e foi corrigido.
+- Botões com contorno perderam a borda porque `border-transparent` (base) e `border-brand` (variante) competiam. Cada variante passou a definir a própria cor de borda.
+- O mapa de escolha de ponto reenquadrava a cada toque, porque o alfinete entrava no enquadramento. Passou a enquadrar a área mapeada.
+
 ## Limitações do ambiente
 
-- O ambiente onde o código foi gerado **não tinha acesso à internet para `npm install`**. Por isso o projeto não foi executado com o Vite em si: foi validado com esbuild (que compila o mesmo código) e Playwright. Ao rodar `npm install && npm start` pela primeira vez, vale conferir se as versões em `package.json` resolvem sem conflito.
+- O ambiente onde o código foi gerado **não tinha acesso à internet para `npm install`**. O projeto não foi executado com o Vite em si: foi validado com esbuild e com o compilador do Tailwind v4 chamado diretamente, mais Playwright. Ao rodar `npm install && npm start` pela primeira vez, vale conferir se as versões em `package.json` resolvem sem conflito.
+- O **Google Maps real** não pôde ser carregado aqui (só a versão simulada). Na primeira execução com uma chave verdadeira, vale olhar o mapa nas telas 3, 4, 5B e 6.
+- O pacote `@vercel/blob` não pôde ser instalado. O código usa só `put`, `list` e `del`, que são documentados, mas a gravação real no Blob só pode ser conferida no site publicado (cabeçalho `X-AcessaRio-Store: blob`).
 - A integração com a **Nominatim** não pôde ser chamada a partir do ambiente de teste. O código trata falha de rede com mensagem e o mapa continua funcionando por toque.
 
 ## O que precisa de revisão humana
@@ -66,7 +91,8 @@ Depois de testar, a pessoa pediu:
 - **Pesos da nota** (`src/domain/scoring.js`, `profiles.js`, `reportTypes.js`): foram definidos pela IA a partir do protótipo, não de pesquisa com usuários. O ideal é validá-los com pessoas de cada perfil e com normas de acessibilidade (ex.: NBR 9050, que trata de inclinação de rampas e largura de calçadas).
 - **Limiares** de confirmação (5 votos), desatualização (30 dias) e validade do levantamento (180 dias).
 - **Dados**: todas as ruas, medidas e relatos são fictícios; as coordenadas são aproximadas.
-- **Privacidade**: fotos e localização dos relatos ficam no banco sem moderação nem remoção de metadados.
+- **Privacidade**: fotos e localização dos relatos ficam no banco sem moderação nem remoção de metadados. Na Vercel, o banco é um arquivo público no Blob (com nome difícil de adivinhar).
+- **Chave do Google Maps**: precisa de restrição por domínio no Google Cloud, porque fica visível no navegador.
 
 ## Como a IA deve ser usada daqui em diante
 
