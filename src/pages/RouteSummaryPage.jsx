@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { CityMap } from '../components/map/CityMap.jsx';
 import { endpointMarkers, segmentNumberMarkers, toMapRoute } from '../components/map/mapAdapters.js';
 import { SegmentDetail } from '../components/routes/SegmentDetail.jsx';
@@ -47,6 +47,7 @@ export function RouteSummaryPage({ routeId, query, navigate, back }) {
   const reversed = query.inverso === '1';
   const { evaluation, loading, error, reload } = useRouteDetail(routeId, { reversed });
   const [navStep, setNavStep] = useState(null);
+  const stepsRef = useRef(null);
 
   // sem trecho escolhido, abre no trecho com a pior nota (onde está a atenção)
   const worst = evaluation?.segments.reduce((min, s) => (s.score < min.score ? s : min), evaluation.segments[0]);
@@ -56,6 +57,11 @@ export function RouteSummaryPage({ routeId, query, navigate, back }) {
 
   const markers = useMemo(() => (evaluation ? [...endpointMarkers(evaluation), ...segmentNumberMarkers(evaluation)] : []), [evaluation]);
   const mapRoutes = useMemo(() => (evaluation ? [toMapRoute(evaluation, { emphasis: 'selected' })] : []), [evaluation]);
+
+  // mantém o trecho escolhido visível na faixa de trechos
+  useEffect(() => {
+    stepsRef.current?.querySelector('[aria-pressed="true"]')?.scrollIntoView({ block: 'nearest', inline: 'center' });
+  }, [selected?.segment.id]);
 
   if (loading) return <div className="page"><LoadingState lines={4} height={120} /></div>;
   if (error || !evaluation) return <div className="page"><ErrorState error={error} onRetry={reload} /></div>;
@@ -117,7 +123,7 @@ export function RouteSummaryPage({ routeId, query, navigate, back }) {
         </div>
       )}
 
-      <div className="segment-steps" role="group" aria-label="Trechos da rota">
+      <div className="segment-steps" ref={stepsRef} role="group" aria-label="Trechos da rota">
         {evaluation.segments.map((s) => (
           <button
             key={s.segment.id}

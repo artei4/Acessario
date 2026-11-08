@@ -22,8 +22,7 @@ export function MyReportItem({ report, onUpdate, onDelete, busy }) {
     <li className="report-item">
       <div className="row row--between" style={{ flexWrap: 'nowrap' }}>
         <span className="small strong">{type.short}</span>
-        <div className="row" style={{ gap: 2, flexWrap: 'nowrap' }}>
-          <StatusBadge status={report.status} />
+        <div className="row" style={{ gap: 0, flexWrap: 'nowrap' }}>
           <button type="button" className="icon-button" aria-label={`Editar relato: ${type.label}`} onClick={() => setMode('edit')}>
             <Icon name="edit" size={16} />
           </button>
@@ -32,6 +31,9 @@ export function MyReportItem({ report, onUpdate, onDelete, busy }) {
           </button>
         </div>
       </div>
+      <span>
+        <StatusBadge status={report.status} />
+      </span>
       <span className="tiny muted">
         {tallyText(report)} · {formatShortDate(report.createdAt)}
       </span>

@@ -9,7 +9,9 @@ export function PhotoField({ picker }) {
         {photo ? (
           <img className="photo-field__preview" src={photo} alt="Prévia da foto escolhida" />
         ) : (
-          <div className="photo-field__preview photo-thumb" aria-hidden="true" />
+          <div className="photo-field__preview photo-thumb photo-thumb--empty" aria-hidden="true">
+            <Icon name="camera" size={20} />
+          </div>
         )}
         <label className="photo-field__drop">
           <Icon name="camera" size={18} />
