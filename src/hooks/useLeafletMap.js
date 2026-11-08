@@ -17,10 +17,12 @@ export function useLeafletMap(containerRef, options = {}) {
     const instance = L.map(containerRef.current, {
       center: [-22.961, -43.181],
       zoom: 15,
-      zoomControl: true,
+      zoomControl: false,
       attributionControl: true,
       ...optionsRef.current,
     });
+    // zoom no canto inferior direito: o canto superior esquerdo é do botão de voltar
+    L.control.zoom({ position: 'bottomright', zoomInTitle: 'Aproximar', zoomOutTitle: 'Afastar' }).addTo(instance);
     L.tileLayer(OSM_TILES, { maxZoom: 19, attribution: OSM_ATTRIBUTION }).addTo(instance);
     setMap(instance);
     return () => {
