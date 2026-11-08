@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Bleed, Page } from '../components/layout/Page.jsx';
 import { MapBackButton } from '../components/layout/TopBar.jsx';
-import { CityMap } from '../components/map/CityMap.jsx';
+import { AccessMap } from '../components/map/AccessMap.jsx';
 import { LegendDot } from '../components/map/MapFrame.jsx';
 import { endpointMarkers, segmentNumberMarkers, toMapRoute } from '../components/map/mapAdapters.js';
 import { SegmentDetail } from '../components/routes/SegmentDetail.jsx';
@@ -95,7 +95,7 @@ export function RouteSummaryPage({ routeId, query, navigate, back }) {
   return (
     <Page flush>
       <Bleed>
-        <CityMap
+        <AccessMap
           bleed
           routes={mapRoutes}
           markers={markers}

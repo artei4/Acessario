@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Bleed, Page } from '../components/layout/Page.jsx';
 import { MapBackButton } from '../components/layout/TopBar.jsx';
-import { CityMap } from '../components/map/CityMap.jsx';
+import { AccessMap } from '../components/map/AccessMap.jsx';
 import { endpointMarkers, toMapRoute } from '../components/map/mapAdapters.js';
 import { RouteCard } from '../components/routes/RouteCard.jsx';
 import { Button } from '../components/ui/Button.jsx';
@@ -65,7 +65,7 @@ export function RoutesPage({ query, navigate, back }) {
     <Page flush>
       <Bleed>
         {evaluations.length > 0 ? (
-          <CityMap
+          <AccessMap
             bleed
             routes={mapRoutes}
             markers={endpointMarkers(evaluations[0])}

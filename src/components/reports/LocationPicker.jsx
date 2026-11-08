@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { CityMap } from '../map/CityMap.jsx';
+import { AccessMap } from '../map/AccessMap.jsx';
 import { MapHint } from '../map/MapFrame.jsx';
 import { Button } from '../ui/Button.jsx';
 import { Icon } from '../ui/Icon.jsx';
@@ -18,6 +18,8 @@ export function LocationPicker({ segments, point, onChange, hint = 'Arraste para
   const [geoError, setGeoError] = useState(null);
 
   const nearest = useMemo(() => (point ? nearestSegment(point, segments) : null), [point, segments]);
+  // enquadra sempre a área mapeada (ou o trecho em foco), e não o alfinete, para o mapa não pular a cada toque
+  const frame = useMemo(() => focus ?? segments.flatMap((s) => s.path), [focus, segments]);
   const mapRoutes = useMemo(
     () => [{ id: 'all', emphasis: 'normal', segments: segments.map((s) => ({ id: s.id, path: s.path, level: 'unknown', order: s.order })) }],
     [segments],
@@ -50,16 +52,16 @@ export function LocationPicker({ segments, point, onChange, hint = 'Arraste para
 
   return (
     <div className="flex flex-col gap-2">
-      <CityMap
+      <AccessMap
         routes={mapRoutes}
         markers={point ? [{ id: 'pin', kind: 'pin', point }] : []}
-        focus={focus}
+        focus={frame}
         aspect={2.1}
         onPick={onChange}
         label="Mapa para marcar o local. Toque ou use as setas do teclado para mover o marcador."
       >
         <MapHint>{point ? hint : 'Toque no mapa para marcar'}</MapHint>
-      </CityMap>
+      </AccessMap>
 
       <div className="flex flex-wrap items-center gap-1.5 text-[13px]">
         <Icon name="locate" size={16} />
