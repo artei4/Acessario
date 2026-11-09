@@ -76,7 +76,7 @@ function EditProfileModal({ user, onSave, onClose }) {
 
 /** Tela 6 — Perfil, preferências e contribuições. */
 export function ProfilePage({ query, navigate }) {
-  const { user, updateUser, setPreference } = useCurrentUser();
+  const { user, updateUser, setPreference, signOut } = useCurrentUser();
   const toast = useToast();
   const { byId } = usePlaces();
   const recent = useRecentSearches(user.id);
@@ -122,9 +122,17 @@ export function ProfilePage({ query, navigate }) {
           <h1 className="text-lg font-bold">{user.name}</h1>
           <Badge tone="info">{getProfile(user.profile).label}</Badge>
         </div>
-        <Button variant="ghost" onClick={() => setEditing(true)}>
-          Editar
-        </Button>
+        <div className="flex items-center">
+          <Button variant="ghost" onClick={() => setEditing(true)}>
+            Editar
+          </Button>
+          <Button variant="ghost-danger" icon="logout" onClick={() => {
+            signOut();
+            toast.show('Você saiu da conta.', { tone: 'info' });
+          }}>
+            Sair
+          </Button>
+        </div>
       </header>
 
       <Card as="section" className="flex flex-col gap-0.5" aria-labelledby="prefs-title">

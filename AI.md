@@ -105,3 +105,14 @@ A pessoa pediu um índice que mostrasse áreas perigosas, "como comunidade ou qu
 - **O que foi feito:** os tipos `risk`/`safe` em `reportTypes.js`, `domain/safety.js` (validade, peso, atenuação, níveis), o índice por trecho e rota em `scoring.js` (sem mexer na nota de acessibilidade), a preferência `avoidUnsafe`, os componentes em `components/safety/`, a camada no mapa, a aba "Segurança" em Contribuir, os votos com "Não vale mais" e dados fictícios de exemplo.
 - **Ajuste durante os testes:** um único assalto não verificado ficava em "risco baixo" (2,9 de 3), o que confundiria ao lado da frase "assalto ontem". O limite de "atenção" passou para 2,5.
 - **Verificação:** 44 testes. No navegador, com o servidor local: selos nos cartões, seção do trecho, aviso na navegação, contribuição de "rua escura" num ponto solto, preferência salva, tema escuro.
+
+Nona rodada: entrar, trocar de conta e sair
+A pessoa quis testar a confirmação de relatos com outra conta e percebeu que não havia como sair da conta. O usuário era fixo no código (u-jose), sem login.
+
+Sessão no aparelho: services/sessionStore.js guarda a conta ativa e as contas que já entraram no aparelho (localStorage, com proteção para quando o armazenamento está bloqueado). Recebe o armazenamento como parâmetro, para ser testado sem navegador.
+Tela de entrada (pages/LoginPage.jsx): a pessoa digita o nome. Se existe conta com esse nome (sem diferenciar maiúsculas e acentos), entra; se não existe, o app pergunta e cria a conta na hora. Conta nova passa pela escolha do perfil de mobilidade. As contas já usadas no aparelho aparecem para entrar com um toque.
+Botão Sair no Perfil, ao lado de Editar. Sair encerra a sessão, mas a conta continua na lista do aparelho.
+UserContext ganhou signIn, switchTo e signOut. Se a conta salva no aparelho não existe mais na API (banco recriado), o app volta para a entrada em vez de mostrar erro.
+Decisão registrada: por ser protótipo, a entrada é só pelo nome, sem senha. A tela avisa isso. Senhas pediriam guardar hashes fora da coleção pública users e criar uma rota de login no servidor, o que fica como próximo passo.
+Verificação: 49 testes. No navegador, com o servidor local: José entrou digitando "jose" (sem acento), criou um relato e saiu; Maria criou a conta, escolheu o perfil e confirmou o relato do José (voto gravado com o id da Maria); José voltou pela lista do aparelho, viu "1 confirmação" em Meus relatos e não conseguiu confirmar o próprio relato.
+

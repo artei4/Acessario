@@ -11,6 +11,7 @@ import { RoutesPage } from './pages/RoutesPage.jsx';
 import { RouteSummaryPage } from './pages/RouteSummaryPage.jsx';
 import { ReportPage } from './pages/ReportPage.jsx';
 import { ProfilePage } from './pages/ProfilePage.jsx';
+import { LoginPage } from './pages/LoginPage.jsx';
 import { config } from './config/env.js';
 
 /** Tabela de rotas: padrão → página e item ativo da barra inferior. */
@@ -32,7 +33,7 @@ function resolve(path) {
 }
 
 export function App() {
-  const { user, loading, error, reload } = useCurrentUser();
+  const { user, signedIn, loading, error, reload } = useCurrentUser();
   const { path, query, navigate, back } = useHashRouter();
   const match = resolve(path);
   const needsOnboarding = user && !user.profile;
@@ -42,6 +43,15 @@ export function App() {
     if (needsOnboarding && path !== '/boas-vindas') navigate('/boas-vindas', undefined, { replace: true });
     else if (!match) navigate('/buscar', undefined, { replace: true });
   }, [user, needsOnboarding, path, match, navigate]);
+
+  // sem conta ativa: tela de entrada, qualquer que seja o endereço
+  if (!signedIn) {
+    return (
+      <AppShell>
+        <LoginPage navigate={navigate} />
+      </AppShell>
+    );
+  }
 
   if (loading) {
     return (

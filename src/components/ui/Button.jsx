@@ -10,6 +10,7 @@ const VARIANTS = {
   success: 'bg-ok-soft border-ok text-ok',
   danger: 'bg-surface border-bad text-bad hover:enabled:bg-bad-soft',
   ghost: 'border-transparent bg-transparent text-brand',
+  'ghost-danger': 'border-transparent bg-transparent text-bad hover:enabled:bg-bad-soft',
   'on-navy': 'bg-transparent border-white/60 text-on-navy hover:enabled:bg-white/10',
 };
 

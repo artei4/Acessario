@@ -31,6 +31,7 @@ As telas seguem o protótipo `AcessaRio_prototipo.pdf`.
 
 | # | Tela do protótipo | Rota (hash) | Arquivo |
 |---|---|---|---|
+| — | Entrar (aparece sempre que não há conta ativa) | qualquer | `src/pages/LoginPage.jsx` |
 | 1 | Perfil de mobilidade | `#/boas-vindas` | `src/pages/OnboardingPage.jsx` |
 | 2 | Busca de destino | `#/buscar` | `src/pages/SearchPage.jsx` |
 | 3 | Rotas e mapa de acessibilidade | `#/rotas?de=…&para=…` | `src/pages/RoutesPage.jsx` |
@@ -71,7 +72,7 @@ O mesmo núcleo REST da API (`shared/restCore.js`) roda dentro do navegador e os
 | `VITE_MAP_PROVIDER` | `osm` | `osm` usa o OpenStreetMap; `schematic` usa o mapa esquemático, sem internet |
 | `VITE_API_MODE` | `http` | `http` usa a API REST; `local` roda tudo no navegador |
 | `VITE_API_URL` | `http://localhost:3001` em desenvolvimento, `/api` publicado | Endereço da API REST |
-| `VITE_USER_ID` | `u-jose` | Usuário da demonstração (não há login) |
+| `VITE_USER_ID` | — | Opcional: entra direto nesta conta quando o aparelho ainda não tem sessão (desenvolvimento) |
 | `BLOB_READ_WRITE_TOKEN` | — | Só na Vercel: criado automaticamente ao conectar o Vercel Blob |
 
 ### Scripts
@@ -128,6 +129,7 @@ O projeto `acessario` na Vercel publica a branch `main` do GitHub (`artei4/Acess
 
 ## Funcionalidades
 
+- **Contas**: tela de entrada pelo nome (cria a conta se não existir e pergunta o perfil de mobilidade), lista de contas usadas no aparelho para trocar com um toque e botão **Sair** no Perfil. Serve, por exemplo, para uma segunda pessoa confirmar um relato; ninguém confirma o próprio relato.
 - **Modo claro e escuro**: botão de sol/lua nas telas 1 e 2 e escolha entre Claro, Escuro e Automático em Perfil → Aparência. A escolha fica salva no navegador, e o mapa acompanha o tema.
 - **Índice de segurança** por trecho e por rota, baseado só em **ocorrências relatadas pelas pessoas** (assalto, tiroteio, rua escura, local deserto) e em pontos que dão segurança (bem iluminado, comércio aberto, policiamento). Os relatos **perdem peso com o tempo**, e o índice **não classifica bairros**. Ele aparece como selo nos cartões de rota, numa seção de cada trecho, na navegação e numa camada do mapa que pode ser ligada e desligada. A preferência "Evitar trechos com alerta de segurança" tira da recomendação as rotas com alerta.
 - **Perfil de mobilidade** (cadeirante, mobilidade reduzida, deficiência visual, idoso): muda o peso de cada característica do caminho na nota.
@@ -149,7 +151,7 @@ O projeto `acessario` na Vercel publica a branch `main` do GitHub (`artei4/Acess
 | Relatos (`/reports`) | Novo problema, Contribuir | Rotas, trechos, Meus relatos | Editar descrição | Excluir (remove os votos junto) |
 | Votos (`/votes`) | Confirmar / Resolvido / Incorreta | Contagem e status | Trocar o voto | Desfazer voto |
 | Buscas recentes (`/searches`) | Buscar rotas | Rotas recentes | — | Remover da lista |
-| Usuário (`/users`) | — (seed) | Perfil | Perfil, nome, preferências | — |
+| Usuário (`/users`) | Criar conta na entrada | Entrar, Perfil | Perfil, nome, preferências | — |
 
 ---
 
@@ -187,14 +189,14 @@ acessario/
 │   ├── api/                httpClient, localClient, ApiError, client (escolhe o modo)
 │   ├── services/           usersService, placesService, routesService, reportsService,
 │   │                       searchesService, networkService, geocodingService (Photon),
-│   │                       routingService (rotas a pé no OSRM)
+│   │                       routingService (rotas a pé no OSRM), sessionStore (conta ativa no aparelho)
 │   ├── domain/             profiles, reportTypes, reportStatus, scoring, safety, geo, summary,
 │   │                       routePlanning (resposta do roteador → rotas e trechos)
 │   ├── hooks/              useAsync, useHashRouter, useRouteOptions, useRouteDetail,
 │   │                       useReportActions, useMyReports, useContribution, usePlaces,
 │   │                       useRecentSearches, useAddressAutocomplete, usePhotoPicker, useEvaluationContext,
 │   │                       useLeafletMap (mapa, eventos e camadas do Leaflet)
-│   ├── context/            UserContext (usuário + atualização otimista), ThemeContext, ToastContext
+│   ├── context/            UserContext (conta ativa: entrar, trocar, sair; atualização otimista), ThemeContext, ToastContext
 │   ├── components/
 │   │   ├── ui/             Button, Badge, Card/Notice, Field, Icon, IconButton, Toggle, Tabs,
 │   │   │                   ChoiceGrid, ScoreRing, Modal, PhotoField, ThemeToggle, States
@@ -338,7 +340,7 @@ Depois, cada relato ativo soma (facilidade) ou subtrai (obstáculo) seus pontos 
 npm test
 ```
 
-44 testes com `node:test` cobrem: validade e níveis do índice de segurança, separação entre segurança e acessibilidade, preferência de evitar alertas, relatos ligados a rotas pela localização, relatos só com localização na API, conversão dos lugares do Photon (incluindo endereços sem nome), conversão das rotas do roteador em trechos, trechos sem levantamento, gravação e cascata de rotas, ciclo de status dos relatos, desatualização, peso dos relatos, bloqueio por perfil, preferência por rotas planas, impacto de um relato na nota, ranqueamento com os dados de demonstração, rota no sentido inverso, CRUD/validação/cascata da API, leitura de rotas da Vercel Function, armazenamento no Blob (com um Blob simulado), enquadramento do mapa e localização do trecho mais próximo.
+49 testes com `node:test` cobrem: sessão (entrar, sair, contas do aparelho, armazenamento bloqueado), comparação de nomes, validade e níveis do índice de segurança, separação entre segurança e acessibilidade, preferência de evitar alertas, relatos ligados a rotas pela localização, relatos só com localização na API, conversão dos lugares do Photon (incluindo endereços sem nome), conversão das rotas do roteador em trechos, trechos sem levantamento, gravação e cascata de rotas, ciclo de status dos relatos, desatualização, peso dos relatos, bloqueio por perfil, preferência por rotas planas, impacto de um relato na nota, ranqueamento com os dados de demonstração, rota no sentido inverso, CRUD/validação/cascata da API, leitura de rotas da Vercel Function, armazenamento no Blob (com um Blob simulado), enquadramento do mapa e localização do trecho mais próximo.
 
 ---
 
@@ -354,7 +356,7 @@ npm test
 
 ## Limitações e próximos passos
 
-- Não há autenticação: o usuário é fixo (`VITE_USER_ID`).
+- A entrada é só pelo nome, sem senha: qualquer pessoa que digitar "José" entra na conta do José. Para contas reais, o próximo passo é senha com hash guardado fora da coleção pública `users` e uma rota de login no servidor.
 - Rotas calculadas pelo roteador começam sem dados de acessibilidade. O próximo passo seria ler as etiquetas de acessibilidade do próprio OpenStreetMap (`highway=steps`, `incline`, `surface`, `kerb`, `wheelchair`) pela Overpass API e preencher o levantamento inicial dos trechos.
 - O roteador público usa o perfil a pé padrão, que não evita escadas. As regras do app avisam quando um trecho tem escadas relatadas, mas o caminho em si não muda.
 - O banco no Vercel Blob é um arquivo JSON público com nome difícil de adivinhar. Funciona para a demonstração; com usuários reais, o ideal é um banco de dados (ex.: Postgres) e fotos em armazenamento privado.
