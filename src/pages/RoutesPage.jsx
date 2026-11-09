@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { Bleed, Page } from '../components/layout/Page.jsx';
 import { MapBackButton } from '../components/layout/TopBar.jsx';
 import { AccessMap } from '../components/map/AccessMap.jsx';
-import { endpointMarkers, toMapRoute } from '../components/map/mapAdapters.js';
+import { endpointMarkers, safetyMarkers, toMapRoute } from '../components/map/mapAdapters.js';
+import { SafetyLayerToggle } from '../components/safety/SafetyLayerToggle.jsx';
 import { RouteCard } from '../components/routes/RouteCard.jsx';
 import { Button } from '../components/ui/Button.jsx';
 import { EmptyState, ErrorState, LoadingState, Skeleton } from '../components/ui/States.jsx';
@@ -24,6 +25,7 @@ export function RoutesPage({ query, navigate, back }) {
   // plan: sem rota salva entre os dois lugares, calcula rotas a pé pelo OpenStreetMap e grava na API
   const { evaluations, loading, error, reload } = useRouteOptions(originId, destinationId, { plan: true });
   const [selectedId, setSelectedId] = useState(null);
+  const [showSafety, setShowSafety] = useState(true);
 
   useEffect(() => {
     if (evaluations.length && !evaluations.some((e) => e.route.id === selectedId)) {
@@ -61,6 +63,8 @@ export function RoutesPage({ query, navigate, back }) {
 
   const origin = byId.get(originId);
   const destination = byId.get(destinationId);
+  const selected = evaluations.find((e) => e.route.id === selectedId) ?? evaluations[0];
+  const safetyPoints = selected ? safetyMarkers(selected.safety) : [];
 
   return (
     <Page flush>
@@ -69,13 +73,15 @@ export function RoutesPage({ query, navigate, back }) {
           <AccessMap
             bleed
             routes={mapRoutes}
-            markers={endpointMarkers(evaluations[0])}
+            markers={[...endpointMarkers(evaluations[0]), ...(showSafety ? safetyPoints : [])]}
             aspect={1.25}
             onSelectRoute={setSelectedId}
             showLegend
             legendPosition="right"
             label="Mapa com as rotas encontradas, coloridas pela acessibilidade de cada trecho"
-          />
+          >
+            <SafetyLayerToggle on={showSafety} onChange={setShowSafety} count={safetyPoints.length} />
+          </AccessMap>
         ) : (
           <Skeleton className="aspect-[1.25] rounded-none" />
         )}

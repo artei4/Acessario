@@ -36,3 +36,16 @@ export function segmentNumberMarkers(evaluation) {
     point: pathMidpoint(e.segment.path),
   }));
 }
+
+/** Marcadores das ocorrências e pontos de segurança que têm localização. */
+export function safetyMarkers(safety) {
+  if (!safety) return [];
+  return [...safety.risks, ...safety.positives]
+    .filter((item) => item.report.location)
+    .map((item) => ({
+      id: `safety-${item.report.id}`,
+      kind: item.report.kind === 'risk' ? 'risk' : 'safe',
+      label: item.type.label,
+      point: [Number(item.report.location.lat), Number(item.report.location.lon)],
+    }));
+}

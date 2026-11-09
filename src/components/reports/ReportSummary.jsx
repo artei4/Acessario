@@ -9,7 +9,7 @@ export function ReportSummary({ report }) {
     <li className="flex flex-col gap-0.5 rounded-lg border border-line px-3 py-2.5">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <span className="text-[13px] font-bold">
-          {report.kind === 'facilitator' ? '＋ ' : ''}
+          {report.kind === 'facilitator' || report.kind === 'safe' ? '＋ ' : ''}
           {type.label}
         </span>
         <StatusBadge status={report.status} />

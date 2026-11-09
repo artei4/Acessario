@@ -4,7 +4,8 @@ import { Card, Notice, SectionTitle } from '../ui/Card.jsx';
 import { ScoreRing, scoreLevel } from '../ui/ScoreRing.jsx';
 import { PhotoThumb } from '../reports/PhotoThumb.jsx';
 import { ReportSummary } from '../reports/ReportSummary.jsx';
-import { getReportType } from '../../domain/reportTypes.js';
+import { getReportType, isAccessibilityReport } from '../../domain/reportTypes.js';
+import { SafetySection } from '../safety/SafetySection.jsx';
 import { cn } from '../../utils/cn.js';
 import { formatMeters, formatRelativeDays, formatShortDate, formatWidth, signed } from '../../utils/format.js';
 
@@ -43,7 +44,9 @@ function Attribute({ label, value }) {
 
 /** Detalhe de um trecho na tela de resumo da rota (tela 4). */
 export function SegmentDetail({ evaluation, routeName, onReport }) {
-  const { segment, code, score, breakdown, reports, delayMin, delayReasons, verified, blocked, blockReasons } = evaluation;
+  const { segment, code, score, breakdown, delayMin, delayReasons, verified, blocked, blockReasons, safety } = evaluation;
+  // a lista de relatos e as fotos são de acessibilidade; segurança tem a seção própria
+  const reports = evaluation.reports.filter(isAccessibilityReport);
   const level = scoreLevel(score);
   const outdated = reports.filter((r) => r.active && r.outdated);
 
@@ -102,6 +105,8 @@ export function SegmentDetail({ evaluation, routeName, onReport }) {
           </ul>
         )}
       </div>
+
+      <SafetySection safety={safety} />
 
       <Button variant="secondary" block onClick={onReport}>
         Confirmar ou relatar problema neste trecho ›

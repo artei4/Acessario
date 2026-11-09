@@ -129,6 +129,7 @@ O projeto `acessario` na Vercel publica a branch `main` do GitHub (`artei4/Acess
 ## Funcionalidades
 
 - **Modo claro e escuro**: botão de sol/lua nas telas 1 e 2 e escolha entre Claro, Escuro e Automático em Perfil → Aparência. A escolha fica salva no navegador, e o mapa acompanha o tema.
+- **Índice de segurança** por trecho e por rota, baseado só em **ocorrências relatadas pelas pessoas** (assalto, tiroteio, rua escura, local deserto) e em pontos que dão segurança (bem iluminado, comércio aberto, policiamento). Os relatos **perdem peso com o tempo**, e o índice **não classifica bairros**. Ele aparece como selo nos cartões de rota, numa seção de cada trecho, na navegação e numa camada do mapa que pode ser ligada e desligada. A preferência "Evitar trechos com alerta de segurança" tira da recomendação as rotas com alerta.
 - **Perfil de mobilidade** (cadeirante, mobilidade reduzida, deficiência visual, idoso): muda o peso de cada característica do caminho na nota.
 - **Busca de destino em todo o Rio, com sugestões enquanto se digita**: ao digitar "barra", aparecem BarraShopping, Praia da Barra da Tijuca etc. Os lugares já usados aparecem primeiro, e o resto vem do OpenStreetMap (Photon). Setas e Enter escolhem a sugestão. Também tem inversão de origem/destino e resumo dos relatos recentes no trajeto.
 - **Rotas para qualquer trajeto**: sem rota salva entre os dois lugares, o app calcula até 3 caminhos a pé no roteador do OpenStreetMap e grava lugares, rotas e trechos na API. Os trechos novos começam como "não verificados" e ganham nota conforme as pessoas relatam e confirmam o que encontram.
@@ -187,7 +188,7 @@ acessario/
 │   ├── services/           usersService, placesService, routesService, reportsService,
 │   │                       searchesService, networkService, geocodingService (Photon),
 │   │                       routingService (rotas a pé no OSRM)
-│   ├── domain/             profiles, reportTypes, reportStatus, scoring, geo, summary,
+│   ├── domain/             profiles, reportTypes, reportStatus, scoring, safety, geo, summary,
 │   │                       routePlanning (resposta do roteador → rotas e trechos)
 │   ├── hooks/              useAsync, useHashRouter, useRouteOptions, useRouteDetail,
 │   │                       useReportActions, useMyReports, useContribution, usePlaces,
@@ -200,6 +201,7 @@ acessario/
 │   │   ├── layout/         AppShell/Page/Bleed, TopBar, BottomNav, RioScene
 │   │   ├── map/            AccessMap, LeafletRouteMap, CityMap (esquemático), MapFrame,
 │   │   │                   mapAdapters, mapGeometry, projection
+│   │   ├── safety/         SafetyBadge/SafetyLine, SafetySection, SafetyLayerToggle
 │   │   ├── places/         PlaceSearchBox (busca de lugares com sugestões, usada em dois lugares)
 │   │   ├── routes/         RouteCard, SegmentDetail, PlaceInput
 │   │   └── reports/        ReportVoteCard, NewReportForm, ContributeForm, LocationPicker…
@@ -261,11 +263,11 @@ curl -X POST http://localhost:3001/votes -H "Content-Type: application/json" \
 
 | Coleção | Campos principais |
 |---|---|
-| `users` | `name`, `profile`, `preferences { avoidStairs, preferFlat, includeSupportPoints }` |
+| `users` | `name`, `profile`, `preferences { avoidStairs, preferFlat, includeSupportPoints, avoidUnsafe }` |
 | `places` | `name`, `neighborhood`, `lat`, `lon`, `osmId` (lugares vindos da busca) |
 | `routes` | `name`, `via`, `originId`, `destinationId`, `distanceKm`, `baseMinutes`, `source` (`osm` quando calculada pelo roteador) |
 | `segments` | `routeId`, `order`, `street`, `lengthM`, `widthM`, `slopePct`, `hasStairs`, `hasRamps`, `floor`, `tactile`, `supportPoints`, `surveyedAt`, `path [[lat, lon]]` |
-| `reports` | `segmentId` (ou `null`), `location { lat, lon }`, `placeName`, `kind` (`obstacle`/`facilitator`), `type`, `description`, `photo`, `userId`, `createdAt`. Precisa de `segmentId` **ou** `location` |
+| `reports` | `segmentId` (ou `null`), `location { lat, lon }`, `placeName`, `kind` (`obstacle`/`facilitator` para acessibilidade, `risk`/`safe` para segurança), `type`, `description`, `photo`, `userId`, `createdAt`. Precisa de `segmentId` **ou** `location` |
 | `votes` | `reportId`, `userId`, `type` (`confirm`/`resolved`/`incorrect`), `createdAt` |
 | `searches` | `userId`, `originId`, `destinationId`, `createdAt` |
 
@@ -320,13 +322,23 @@ Depois, cada relato ativo soma (facilidade) ou subtrai (obstáculo) seus pontos 
 
 ---
 
+### Índice de segurança (`safety.js`)
+
+- **Baseado em ocorrências, nunca no tipo de bairro.** Comunidade não é sinônimo de perigo, e muita gente com mobilidade reduzida mora nelas. O índice só usa o que foi relatado num lugar e numa data.
+- **Tipos e validade:** assalto (12 pontos, vale 30 dias), tiroteio (20, 15 dias), rua escura (6, 90 dias), local deserto (4, 60 dias). Pontos positivos: bem iluminado (4, 90 dias), comércio aberto (3, 60 dias), policiamento (3, 30 dias).
+- **Peso** = pontos × peso do status (não verificado 25%, em confirmação 50%, confirmado 100%) × validade restante (cai em linha reta até zero). Votos recentes renovam o relato.
+- **Pontos positivos atenuam pela metade**, e nunca mais que metade do risco: iluminação não anula um assalto recente.
+- **Níveis:** sem relatos · risco baixo (< 2,5) · atenção (≥ 2,5) · alerta (≥ 15). Um único assalto não verificado já pede atenção; um tiroteio confirmado ou dois assaltos confirmados geram alerta. A rota assume o nível do pior trecho.
+- **Separado da nota de acessibilidade:** o índice informa, e a pessoa decide. Ele só entra na recomendação com a preferência "Evitar trechos com alerta de segurança".
+- O formulário orienta a descrever o que aconteceu no lugar, nunca pessoas ou grupos.
+
 ## Testes
 
 ```bash
 npm test
 ```
 
-37 testes com `node:test` cobrem: relatos ligados a rotas pela localização, relatos só com localização na API, conversão dos lugares do Photon (incluindo endereços sem nome), conversão das rotas do roteador em trechos, trechos sem levantamento, gravação e cascata de rotas, ciclo de status dos relatos, desatualização, peso dos relatos, bloqueio por perfil, preferência por rotas planas, impacto de um relato na nota, ranqueamento com os dados de demonstração, rota no sentido inverso, CRUD/validação/cascata da API, leitura de rotas da Vercel Function, armazenamento no Blob (com um Blob simulado), enquadramento do mapa e localização do trecho mais próximo.
+44 testes com `node:test` cobrem: validade e níveis do índice de segurança, separação entre segurança e acessibilidade, preferência de evitar alertas, relatos ligados a rotas pela localização, relatos só com localização na API, conversão dos lugares do Photon (incluindo endereços sem nome), conversão das rotas do roteador em trechos, trechos sem levantamento, gravação e cascata de rotas, ciclo de status dos relatos, desatualização, peso dos relatos, bloqueio por perfil, preferência por rotas planas, impacto de um relato na nota, ranqueamento com os dados de demonstração, rota no sentido inverso, CRUD/validação/cascata da API, leitura de rotas da Vercel Function, armazenamento no Blob (com um Blob simulado), enquadramento do mapa e localização do trecho mais próximo.
 
 ---
 
@@ -347,4 +359,5 @@ npm test
 - O roteador público usa o perfil a pé padrão, que não evita escadas. As regras do app avisam quando um trecho tem escadas relatadas, mas o caminho em si não muda.
 - O banco no Vercel Blob é um arquivo JSON público com nome difícil de adivinhar. Funciona para a demonstração; com usuários reais, o ideal é um banco de dados (ex.: Postgres) e fotos em armazenamento privado.
 - Duas gravações exatamente ao mesmo tempo em instâncias diferentes da função: vale a última.
+- Dados oficiais de segurança podem complementar os relatos: a API do **Fogo Cruzado** (tiroteios na Grande Rio, exige cadastro) e os dados abertos do **ISP-RJ** (roubo a pedestre por área de delegacia, mensal).
 - A coleta automática por câmeras e visão computacional, prevista no projeto, está representada apenas pelos atributos dos trechos (`surveyedAt`).

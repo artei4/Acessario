@@ -5,6 +5,7 @@ import { scoreLevel } from '../ui/ScoreRing.jsx';
 import { cn } from '../../utils/cn.js';
 import { formatKm, formatRelativeDays, formatShortDate, plural } from '../../utils/format.js';
 import { BADGES, recentObstacleCount, routeChips } from './routeLabels.js';
+import { SafetyLine } from '../safety/SafetyBadge.jsx';
 
 const SCORE_COLORS = { good: 'text-ok', limited: 'text-warn', bad: 'text-bad', unknown: 'text-mute' };
 
@@ -69,6 +70,8 @@ export function RouteCard({ evaluation, selected, onSelect, onOpen }) {
         )}
         {!recommended && problems.map((p) => <Badge key={p.text} tone={p.tone}>{p.text}</Badge>)}
       </div>
+
+      <SafetyLine safety={evaluation.safety} />
 
       {evaluation.sufficient && evaluation.scoreDelta <= -3 && (
         <p className="m-0 text-xs text-ink-soft">

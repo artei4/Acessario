@@ -24,6 +24,7 @@ const PREFERENCES = [
   { key: 'avoidStairs', label: 'Evitar escadas', description: 'Rotas com escadas não são recomendadas.' },
   { key: 'preferFlat', label: 'Priorizar rotas planas', description: 'Inclinação pesa 50% mais na nota.' },
   { key: 'includeSupportPoints', label: 'Incluir pontos de apoio', description: 'Mostra bancos, farmácias e similares.' },
+  { key: 'avoidUnsafe', label: 'Evitar trechos com alerta de segurança', description: 'Rotas com ocorrências recentes graves não são recomendadas.' },
 ];
 
 function EditProfileModal({ user, onSave, onClose }) {

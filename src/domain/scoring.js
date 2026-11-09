@@ -5,7 +5,8 @@
  * nem da API, o que permite testá-las isoladamente (ver tests/).
  */
 import { getProfile } from './profiles.js';
-import { getReportType } from './reportTypes.js';
+import { getReportType, isAccessibilityReport } from './reportTypes.js';
+import { combineSafety, evaluateSafety } from './safety.js';
 
 const DAY = 24 * 60 * 60 * 1000;
 
@@ -122,7 +123,9 @@ export function evaluateSegment(segment, reports, { profileId, preferences = {},
   }
   if (segment.hasStairs && profile.blockedByStairs) blockReasons.push('Escadas sem rampa');
 
-  for (const report of reports) {
+  // relatos de segurança não mexem na nota de acessibilidade: formam o índice de segurança
+  const accessibilityReports = reports.filter(isAccessibilityReport);
+  for (const report of accessibilityReports) {
     const effect = reportEffect(report, segment, profile);
     if (effect.points !== 0) {
       reportItems.push({ label: `${getReportType(report).short} (relato)`, points: effect.points, source: 'relato', reportId: report.id });
@@ -135,7 +138,7 @@ export function evaluateSegment(segment, reports, { profileId, preferences = {},
   }
 
   const reportPoints = reportItems.reduce((sum, i) => sum + i.points, 0);
-  const verified = isSurveyValid(segment, now) || reports.some((r) => r.status === 'confirmado');
+  const verified = isSurveyValid(segment, now) || accessibilityReports.some((r) => r.status === 'confirmado');
 
   return {
     segment,
@@ -151,6 +154,7 @@ export function evaluateSegment(segment, reports, { profileId, preferences = {},
     blockReasons,
     verified,
     reports: [...reports].sort((a, b) => (a.lastActivityAt < b.lastActivityAt ? 1 : -1)),
+    safety: evaluateSafety(reports, now),
   };
 }
 
@@ -233,7 +237,8 @@ export function evaluateRoute(route, segments, reports, context = {}) {
       em_confirmacao: countBy('em_confirmacao'),
       nao_verificado: countBy('nao_verificado'),
     },
-    outdatedReports: activeReports.filter((r) => r.outdated),
+    outdatedReports: activeReports.filter((r) => r.outdated && isAccessibilityReport(r)),
+    safety: combineSafety(segmentEvaluations.map((e) => e.safety)),
   };
 }
 
@@ -243,7 +248,8 @@ export function evaluateRoute(route, segments, reports, context = {}) {
  * não podem ser recomendadas.
  */
 export function rankRoutes(evaluations, preferences = {}) {
-  const eligible = (e) => e.sufficient && !e.blocked && !(preferences.avoidStairs && e.hasStairs);
+  const unsafe = (e) => preferences.avoidUnsafe && e.safety?.level === 'alert';
+  const eligible = (e) => e.sufficient && !e.blocked && !(preferences.avoidStairs && e.hasStairs) && !unsafe(e);
   const sorted = [...evaluations].sort((a, b) => {
     if (eligible(a) !== eligible(b)) return eligible(a) ? -1 : 1;
     if (a.sufficient !== b.sufficient) return a.sufficient ? -1 : 1;
@@ -259,7 +265,7 @@ export function rankRoutes(evaluations, preferences = {}) {
     if (!e.sufficient) badge = 'insuficiente';
     else if (e.blocked) badge = 'bloqueada';
     else if (e.route.id === recommendedId) badge = 'recomendada';
-    else if (e.estimatedScore < ATTENTION_BELOW || (preferences.avoidStairs && e.hasStairs)) badge = 'atencao';
+    else if (e.estimatedScore < ATTENTION_BELOW || (preferences.avoidStairs && e.hasStairs) || unsafe(e)) badge = 'atencao';
     else badge = 'alternativa';
     return { ...e, recommended: e.route.id === recommendedId, fastest: eligible(e) && e.minutes === fastest, badge };
   });

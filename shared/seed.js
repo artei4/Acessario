@@ -98,6 +98,10 @@ const reportDefs = [
   // Relatos do usuário José
   { id: 'rep-101', segmentId: 'r2-t01', type: 'buraco', kind: 'obstacle', description: 'Buraco perto da farmácia, na subida da Siqueira Campos.', daysAgo: 20, userId: 'u-jose', votes: { confirm: 5 } },
   { id: 'rep-102', segmentId: 'r2-t02', type: 'rampa', kind: 'facilitator', description: 'Rampa de acesso nova na saída do túnel.', daysAgo: 3, userId: 'u-jose', votes: { confirm: 2 } },
+  // Segurança (fictício): ocorrências descrevem o que aconteceu no lugar, nunca pessoas
+  { id: 'rep-201', segmentId: 'r2-t02', type: 'assalto', kind: 'risk', description: 'Roubo de celular na saída do túnel, à noite.', daysAgo: 4, userId: 'u-v08', votes: { confirm: 2 }, location: { lat: -22.9614, lon: -43.1857 } },
+  { id: 'rep-202', segmentId: 'r3-t02', type: 'rua_escura', kind: 'risk', description: 'Postes apagados no trecho do desvio da obra.', daysAgo: 20, userId: 'u-v09', votes: { confirm: 5 }, location: { lat: -22.961, lon: -43.18085 } },
+  { id: 'rep-203', segmentId: 'r1-t02', type: 'bem_iluminado', kind: 'safe', description: 'Calçada bem iluminada e com comércio aberto até tarde.', daysAgo: 10, userId: 'u-v10', votes: { confirm: 3 }, location: { lat: -22.96475, lon: -43.1819 } },
   { id: 'rep-103', segmentId: 'r1-t02', type: 'calcada_larga', kind: 'facilitator', description: 'Calçada larga e sem obstáculos.', daysAgo: 1, userId: 'u-jose', votes: {} },
 ];
 
@@ -134,7 +138,7 @@ export function buildSeed(now = new Date()) {
   let voteSeq = 1;
 
   for (const { daysAgo, votes: counts, ...report } of reportDefs) {
-    reports.push({ ...report, photo: null, location: null, createdAt: iso(daysAgo) });
+    reports.push({ ...report, photo: null, location: report.location ?? null, createdAt: iso(daysAgo) });
 
     const pool = voterIds.filter((id) => id !== report.userId);
     let cursor = 0;

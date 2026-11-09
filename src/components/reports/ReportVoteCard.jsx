@@ -2,7 +2,7 @@ import { Button } from '../ui/Button.jsx';
 import { StatusBadge } from '../ui/Badge.jsx';
 import { Card } from '../ui/Card.jsx';
 import { PhotoThumb } from './PhotoThumb.jsx';
-import { getReportType } from '../../domain/reportTypes.js';
+import { getReportType, isSafetyReport } from '../../domain/reportTypes.js';
 import { segmentCode } from '../../domain/scoring.js';
 import { cn } from '../../utils/cn.js';
 import { formatShortDate } from '../../utils/format.js';
@@ -13,6 +13,11 @@ const VOTES = [
   { type: 'resolved', long: 'O problema foi resolvido', short: 'Resolvido', variant: 'secondary' },
   { type: 'incorrect', long: 'Essa informação está incorreta', short: 'Incorreta', variant: 'danger' },
 ];
+
+/** Em relatos de segurança, "resolvido" vira "não está mais assim" (ex.: rua voltou a ser iluminada). */
+const SAFETY_VOTES = VOTES.map((v) =>
+  v.type === 'resolved' ? { ...v, long: 'Não está mais assim', short: 'Não vale mais' } : v,
+);
 
 const VOTE_LABEL = { confirm: 'confirmou', resolved: 'disse que foi resolvido', incorrect: 'disse que está incorreta' };
 
@@ -64,7 +69,7 @@ export function ReportVoteCard({ report, segment, myVote, onVote, onUndo, busy, 
         <>
           {featured && <p className="m-0 text-[13px] font-bold">Você viu esse problema?</p>}
           <div className={cn(featured ? 'flex flex-col gap-2' : 'grid grid-cols-3 gap-1.5')}>
-            {VOTES.map((vote) => (
+            {(isSafetyReport(report) ? SAFETY_VOTES : VOTES).map((vote) => (
               <Button
                 key={vote.type}
                 variant={vote.variant}

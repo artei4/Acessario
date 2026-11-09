@@ -3,7 +3,9 @@ import { Bleed, Page } from '../components/layout/Page.jsx';
 import { MapBackButton } from '../components/layout/TopBar.jsx';
 import { AccessMap } from '../components/map/AccessMap.jsx';
 import { LegendDot } from '../components/map/MapFrame.jsx';
-import { endpointMarkers, segmentNumberMarkers, toMapRoute } from '../components/map/mapAdapters.js';
+import { endpointMarkers, safetyMarkers, segmentNumberMarkers, toMapRoute } from '../components/map/mapAdapters.js';
+import { SafetyLayerToggle } from '../components/safety/SafetyLayerToggle.jsx';
+import { SafetyLine } from '../components/safety/SafetyBadge.jsx';
 import { SegmentDetail } from '../components/routes/SegmentDetail.jsx';
 import { Badge } from '../components/ui/Badge.jsx';
 import { Button } from '../components/ui/Button.jsx';
@@ -19,6 +21,7 @@ function NavigationPanel({ evaluation, step, onStep, onStop }) {
   const last = step === evaluation.segments.length - 1;
   const remaining = evaluation.segments.slice(step).reduce((sum, s) => sum + s.segment.lengthM, 0);
   const warnings = current.reports.filter((r) => r.active && r.kind === 'obstacle');
+  const risks = current.safety.risks;
   return (
     <section className="flex flex-col gap-2.5 rounded-xl bg-navy p-3.5 text-on-navy" aria-live="polite" aria-label="Navegação">
       <div className="flex justify-between gap-2 text-[13px]">
@@ -32,6 +35,9 @@ function NavigationPanel({ evaluation, step, onStep, onStop }) {
       </p>
       {warnings.length > 0 && (
         <p className="m-0 text-[13px]">Atenção: {warnings.map((r) => getReportType(r).label.toLowerCase()).join(', ')}.</p>
+      )}
+      {risks.length > 0 && (
+        <p className="m-0 text-[13px]">Segurança: {[...new Set(risks.map((r) => r.type.label.toLowerCase()))].join(', ')} relatado recentemente neste trecho.</p>
       )}
       {current.segment.slopePct >= 6 && <p className="m-0 text-[13px]">Inclinação de {current.segment.slopePct}% neste trecho.</p>}
       <div className="grid grid-cols-2 gap-2">
@@ -49,6 +55,7 @@ export function RouteSummaryPage({ routeId, query, navigate, back }) {
   const reversed = query.inverso === '1';
   const { evaluation, loading, error, reload } = useRouteDetail(routeId, { reversed });
   const [navStep, setNavStep] = useState(null);
+  const [showSafety, setShowSafety] = useState(true);
   const stepsRef = useRef(null);
 
   // sem trecho escolhido, abre no trecho com a pior nota (onde está a atenção)
@@ -57,7 +64,11 @@ export function RouteSummaryPage({ routeId, query, navigate, back }) {
   const selected = evaluation?.segments.find((s) => s.segment.id === selectedId) ?? evaluation?.segments[0];
   const highlightId = navStep !== null ? evaluation?.segments[navStep]?.segment.id : selected?.segment.id;
 
-  const markers = useMemo(() => (evaluation ? [...endpointMarkers(evaluation), ...segmentNumberMarkers(evaluation)] : []), [evaluation]);
+  const safetyPoints = useMemo(() => (evaluation ? safetyMarkers(evaluation.safety) : []), [evaluation]);
+  const markers = useMemo(
+    () => (evaluation ? [...endpointMarkers(evaluation), ...segmentNumberMarkers(evaluation), ...(showSafety ? safetyPoints : [])] : []),
+    [evaluation, safetyPoints, showSafety],
+  );
   const mapRoutes = useMemo(() => (evaluation ? [toMapRoute(evaluation, { emphasis: 'selected' })] : []), [evaluation]);
 
   // mantém o trecho escolhido visível na faixa de trechos
@@ -102,7 +113,9 @@ export function RouteSummaryPage({ routeId, query, navigate, back }) {
           highlightSegmentId={highlightId}
           aspect={2}
           label={`Mapa da ${evaluation.route.name} com ${evaluation.segments.length} trechos numerados`}
-        />
+        >
+          <SafetyLayerToggle on={showSafety} onChange={setShowSafety} count={safetyPoints.length} />
+        </AccessMap>
         <MapBackButton onClick={() => back('/rotas')} label="Voltar para as rotas" />
       </Bleed>
 
@@ -125,6 +138,11 @@ export function RouteSummaryPage({ routeId, query, navigate, back }) {
       ) : (
         <NavigationPanel evaluation={evaluation} step={navStep} onStep={setNavStep} onStop={() => setNavStep(null)} />
       )}
+
+      <div className="flex flex-col gap-1.5">
+        <span className="text-[13px] font-bold">Segurança na rota</span>
+        <SafetyLine safety={evaluation.safety} />
+      </div>
 
       {(evaluation.supportPoints.length > 0 || obstacles.length > 0) && (
         <div className="flex flex-col gap-1.5">

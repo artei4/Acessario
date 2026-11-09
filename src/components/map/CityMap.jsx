@@ -172,6 +172,17 @@ export function CityMap({
               </g>
             );
           }
+          if (marker.kind === 'risk' || marker.kind === 'safe') {
+            return (
+              <g key={marker.id} transform={`translate(${x} ${y})`}>
+                <title>{marker.label}</title>
+                <circle r={7 * scale} fill={marker.kind === 'risk' ? '#b91c1c' : '#15803d'} stroke="#fff" strokeWidth={1.5 * scale} />
+                <text fontSize={9 * scale} fontWeight="800" textAnchor="middle" dy={3 * scale} fill="#fff">
+                  {marker.kind === 'risk' ? '!' : '✓'}
+                </text>
+              </g>
+            );
+          }
           if (marker.kind === 'pin') {
             return (
               <g key={marker.id} transform={`translate(${x} ${y}) scale(${scale})`} pointerEvents="none">

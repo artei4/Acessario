@@ -123,6 +123,16 @@ A pessoa mostrou que "Contribuir com o mapa" recusava pontos fora dos trechos j�
 - **Verificação:** no navegador, com o servidor local, foram feitas uma contribuição por endereço e outra por toque no mapa, ambas longe de qualquer rota. As duas foram salvas com nome. Depois foi calculada uma rota passando pelo local, e cada relato apareceu no trecho certo. 37 testes passando.
 - O arquivo `src/hooks/useGeocoding.js`, recriado pela pessoa num commit, não é usado pelo app e foi mantido.
 
+## Oitava rodada: índice de segurança
+
+A pessoa pediu um índice que mostrasse áreas perigosas, "como comunidade ou que tenham relatos mais recentes de assaltos".
+
+- **A IA recomendou não marcar comunidades como perigosas.** Os motivos: estigmatiza moradores, inclusive o público do próprio app (pessoas com mobilidade reduzida que moram em comunidades); é impreciso, porque muitos roubos a pedestre acontecem em áreas centrais; e destoa de um projeto sobre inclusão. A IA propôs um índice baseado em ocorrências com prazo de validade, e a pessoa concordou.
+- A IA pesquisou fontes oficiais (Fogo Cruzado, ISP-RJ) e as deixou como próximo passo, porque o Fogo Cruzado exige cadastro.
+- **O que foi feito:** os tipos `risk`/`safe` em `reportTypes.js`, `domain/safety.js` (validade, peso, atenuação, níveis), o índice por trecho e rota em `scoring.js` (sem mexer na nota de acessibilidade), a preferência `avoidUnsafe`, os componentes em `components/safety/`, a camada no mapa, a aba "Segurança" em Contribuir, os votos com "Não vale mais" e dados fictícios de exemplo.
+- **Ajuste durante os testes:** um único assalto não verificado ficava em "risco baixo" (2,9 de 3), o que confundiria ao lado da frase "assalto ontem". O limite de "atenção" passou para 2,5.
+- **Verificação:** 44 testes. No navegador, com o servidor local: selos nos cartões, seção do trecho, aviso na navegação, contribuição de "rua escura" num ponto solto, preferência salva, tema escuro.
+
 ## Limitações do ambiente
 
 - O ambiente onde o código foi gerado **não tinha acesso à internet para `npm install`**. O projeto não foi executado com o Vite em si: foi validado com esbuild e com o compilador do Tailwind v4 chamado diretamente, mais Playwright. Ao rodar `npm install && npm start` pela primeira vez, vale conferir se as versões em `package.json` resolvem sem conflito.

@@ -20,6 +20,8 @@ function htmlIcon(className, html = '', size = 22) {
 function markerIcon(marker) {
   if (marker.kind === 'number') return htmlIcon('marker-number', marker.label);
   if (marker.kind === 'route-label') return htmlIcon('marker-route-label', marker.label);
+  if (marker.kind === 'risk') return htmlIcon('marker-risk', '!', 20);
+  if (marker.kind === 'safe') return htmlIcon('marker-safe', '✓', 20);
   if (marker.kind === 'pin') return L.divIcon({ className: '', html: PIN_SVG, iconSize: [28, 36], iconAnchor: [14, 34] });
   return htmlIcon(marker.kind === 'origin' ? 'marker-dot marker-dot--origin' : 'marker-dot marker-dot--destination', '', 14);
 }
@@ -121,7 +123,7 @@ export function LeafletRouteMap({
         keyboard: false,
         interactive: isPin,
         zIndexOffset: isPin ? 1000 : 0,
-        title: isPin ? 'Local do relato. Arraste para ajustar.' : undefined,
+        title: isPin ? 'Local do relato. Arraste para ajustar.' : marker.kind === 'risk' || marker.kind === 'safe' ? marker.label : undefined,
       }).addTo(markerLayer);
       if (isPin && onPick) leafletMarker.on('dragend', () => onPick(fromLatLng(leafletMarker.getLatLng())));
     }

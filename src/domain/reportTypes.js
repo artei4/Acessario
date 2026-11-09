@@ -22,10 +22,38 @@ export const FACILITATOR_TYPES = {
   outro_facilitador: { label: 'Outro', short: 'Outro', points: 3, weightKey: null },
 };
 
+/**
+ * Segurança: ocorrências (`risk`) e pontos que dão segurança (`safe`).
+ * Descrevem o que aconteceu no lugar, nunca pessoas. Não entram na nota de acessibilidade:
+ * formam o índice de segurança (domain/safety.js). `validDays` é quanto tempo o relato
+ * continua valendo: o peso cai até zero nesse prazo, porque um assalto de meses atrás diz pouco sobre hoje.
+ */
+export const SAFETY_RISK_TYPES = {
+  assalto: { label: 'Assalto ou roubo', short: 'Assalto', points: 12, validDays: 30 },
+  tiroteio: { label: 'Tiroteio', short: 'Tiroteio', points: 20, validDays: 15 },
+  rua_escura: { label: 'Rua escura ou sem iluminação', short: 'Rua escura', points: 6, validDays: 90 },
+  local_deserto: { label: 'Local deserto', short: 'Deserto', points: 4, validDays: 60 },
+  outro_risco: { label: 'Outro risco', short: 'Risco', points: 4, validDays: 30 },
+};
+
+export const SAFETY_OK_TYPES = {
+  bem_iluminado: { label: 'Bem iluminado', short: 'Iluminado', points: 4, validDays: 90 },
+  comercio_aberto: { label: 'Comércio aberto e movimento', short: 'Movimentado', points: 3, validDays: 60 },
+  policiamento: { label: 'Policiamento ou segurança', short: 'Policiamento', points: 3, validDays: 30 },
+};
+
+/** Relato de acessibilidade (entra na nota) ou de segurança (entra no índice de segurança). */
+export const isAccessibilityReport = (report) => report.kind === 'obstacle' || report.kind === 'facilitator';
+export const isSafetyReport = (report) => report.kind === 'risk' || report.kind === 'safe';
+
+const CATALOGS = { obstacle: OBSTACLE_TYPES, facilitator: FACILITATOR_TYPES, risk: SAFETY_RISK_TYPES, safe: SAFETY_OK_TYPES };
+
 export function getReportType(report) {
-  const catalog = report.kind === 'facilitator' ? FACILITATOR_TYPES : OBSTACLE_TYPES;
+  const catalog = CATALOGS[report.kind] ?? OBSTACLE_TYPES;
   return catalog[report.type] ?? { label: 'Relato', short: 'Relato', points: 0, delayMin: 0, weightKey: null };
 }
 
 export const OBSTACLE_OPTIONS = Object.entries(OBSTACLE_TYPES).map(([value, t]) => ({ value, label: t.label }));
 export const FACILITATOR_OPTIONS = Object.entries(FACILITATOR_TYPES).map(([value, t]) => ({ value, label: t.label }));
+export const SAFETY_RISK_OPTIONS = Object.entries(SAFETY_RISK_TYPES).map(([value, t]) => ({ value, label: t.label, kind: 'risk' }));
+export const SAFETY_OK_OPTIONS = Object.entries(SAFETY_OK_TYPES).map(([value, t]) => ({ value, label: t.label, kind: 'safe' }));

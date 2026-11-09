@@ -8,13 +8,25 @@ import { Tabs } from '../ui/Tabs.jsx';
 import { LocationPicker } from './LocationPicker.jsx';
 import { usePhotoPicker } from '../../hooks/usePhotoPicker.js';
 import { useContribution } from '../../hooks/useContribution.js';
-import { FACILITATOR_OPTIONS, OBSTACLE_OPTIONS, getReportType } from '../../domain/reportTypes.js';
+import {
+  FACILITATOR_OPTIONS,
+  OBSTACLE_OPTIONS,
+  SAFETY_OK_OPTIONS,
+  SAFETY_RISK_OPTIONS,
+  SAFETY_RISK_TYPES,
+  getReportType,
+  isSafetyReport,
+} from '../../domain/reportTypes.js';
 import { formatDateTime, signed } from '../../utils/format.js';
 
 const KINDS = [
-  { id: 'facilitator', label: 'Facilita a passagem', tone: 'success' },
-  { id: 'obstacle', label: 'Dificulta a passagem', tone: 'danger' },
+  { id: 'facilitator', label: 'Facilita', tone: 'success' },
+  { id: 'obstacle', label: 'Dificulta', tone: 'danger' },
+  { id: 'safety', label: 'Segurança' },
 ];
+
+/** Na aba Segurança, o tipo escolhido diz se é ocorrência (risk) ou ponto que dá segurança (safe). */
+const kindFor = (tab, type) => (tab !== 'safety' ? tab : SAFETY_RISK_TYPES[type] ? 'risk' : 'safe');
 
 /** "Contribuir com o mapa" (tela 6): relato livre em qualquer trecho mapeado. */
 export function ContributeForm({ onCreated }) {
@@ -40,7 +52,7 @@ export function ContributeForm({ onCreated }) {
     if (!point) return setError('Marque o local no mapa, busque um endereço ou use a sua localização.');
     setError(null);
     try {
-      const outcome = await submit({ point, placeName, kind, type, description, photo: photo.photo });
+      const outcome = await submit({ point, placeName, kind: kindFor(kind, type), type, description, photo: photo.photo });
       setResult(outcome);
       setType('');
       setDescription('');
@@ -57,15 +69,25 @@ export function ContributeForm({ onCreated }) {
   return (
     <form className="flex flex-col gap-3" onSubmit={handleSubmit} noValidate>
       <Tabs tabs={KINDS} value={kind} onChange={changeKind} label="Tipo de contribuição" />
-      <ChoiceGrid
-        name="contribution-type"
-        options={kind === 'facilitator' ? FACILITATOR_OPTIONS : OBSTACLE_OPTIONS}
-        value={type}
-        onChange={setType}
-        tone={kind === 'facilitator' ? 'success' : undefined}
-        columns={3}
-        legend={kind === 'facilitator' ? 'O que facilita?' : 'O que dificulta?'}
-      />
+      {kind === 'safety' ? (
+        <>
+          <ChoiceGrid name="contribution-type" options={SAFETY_RISK_OPTIONS} value={type} onChange={setType} columns={2} legend="O que aconteceu ou o que você percebeu?" />
+          <ChoiceGrid name="contribution-type" options={SAFETY_OK_OPTIONS} value={type} onChange={setType} tone="success" columns={2} legend="O que ajuda a se sentir seguro?" />
+          <Notice>
+            Descreva o que aconteceu no lugar, nunca pessoas ou grupos. Relatos de segurança perdem peso com o tempo: um assalto deixa de contar depois de 30 dias.
+          </Notice>
+        </>
+      ) : (
+        <ChoiceGrid
+          name="contribution-type"
+          options={kind === 'facilitator' ? FACILITATOR_OPTIONS : OBSTACLE_OPTIONS}
+          value={type}
+          onChange={setType}
+          tone={kind === 'facilitator' ? 'success' : undefined}
+          columns={3}
+          legend={kind === 'facilitator' ? 'O que facilita?' : 'O que dificulta?'}
+        />
+      )}
 
       <LocationPicker
         segments={segments}
@@ -111,8 +133,10 @@ export function ContributeForm({ onCreated }) {
 
       {result && (
         <Notice tone="success" role="status">
-          {!result.segment
-            ? `Seu relato de ${typeLabel} foi registrado em ${result.placeName ?? 'o ponto marcado'}. Ele aparece em toda rota que passar por aqui e ganha peso quando outras pessoas confirmarem.`
+          {isSafetyReport(result.report)
+            ? `Seu relato de segurança (${typeLabel}) foi registrado ${result.segment ? `em ${result.segment.street}` : result.placeName ? `em ${result.placeName}` : 'no ponto marcado'}. Ele entra no índice de segurança das rotas que passam por aqui e perde peso em ${getReportType(result.report).validDays} dias.`
+            : !result.segment
+            ? `Seu relato de ${typeLabel} foi registrado ${result.placeName ? `em ${result.placeName}` : 'no ponto marcado'}. Ele aparece em toda rota que passar por aqui e ganha peso quando outras pessoas confirmarem.`
             : result.impact
               ? `Seu relato de ${typeLabel} somou ${signed(result.impact)} ${Math.abs(result.impact) === 1 ? 'ponto' : 'pontos'} à nota do ${result.code} (${result.segment.street}).`
               : `Seu relato foi registrado no ${result.code} (${result.segment.street}) e passa a pesar na nota quando for confirmado.`}

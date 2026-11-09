@@ -264,6 +264,12 @@
   .marker-number {
     @apply grid size-[22px] place-items-center rounded-full border-2 border-white bg-navy text-[11px] font-bold text-on-navy shadow-soft;
   }
+  .marker-risk {
+    @apply grid size-5 place-items-center rounded-full border-2 border-white bg-[#b91c1c] text-[11px] font-extrabold text-white shadow-soft;
+  }
+  .marker-safe {
+    @apply grid size-5 place-items-center rounded-full border-2 border-white bg-[#15803d] text-[11px] font-extrabold text-white shadow-soft;
+  }
   .marker-route-label {
     @apply grid size-[22px] place-items-center rounded-full border-2 border-ink bg-surface text-[11px] font-bold text-ink shadow-soft;
   }
