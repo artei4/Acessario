@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createSessionStore } from '../src/services/sessionStore.js';
+import { GUEST, createSessionStore } from '../src/services/sessionStore.js';
 import { normalizeName } from '../src/services/usersService.js';
 
 function fakeStorage() {
@@ -25,6 +25,25 @@ test('sair encerra a sessão, mas a conta continua na lista para entrar de novo'
   assert.deepEqual(session.knownAccounts(), [{ id: 'u-jose', name: 'José' }]);
   session.signIn({ id: 'u-jose', name: 'José' });
   assert.equal(session.knownAccounts().length, 1, 'não duplica');
+});
+
+test('o token fica salvo com a conta e some ao sair', () => {
+  const session = createSessionStore(fakeStorage());
+  session.signIn({ id: 'u-ana', name: 'Ana' }, 'token-123');
+  assert.equal(session.token(), 'token-123');
+  session.signOut();
+  assert.equal(session.token(), null, 'para voltar, é preciso a senha');
+});
+
+test('modo visitante: sem token, com perfil e preferências só no aparelho', () => {
+  const session = createSessionStore(fakeStorage());
+  session.signIn({ id: 'u-ana', name: 'Ana' }, 'token-123');
+  session.enterAsGuest();
+  assert.equal(session.currentUserId(), GUEST);
+  assert.equal(session.token(), null);
+  assert.deepEqual(session.guestData(), {});
+  session.saveGuestData({ profile: 'idoso', preferences: { avoidStairs: true } });
+  assert.equal(session.guestData().profile, 'idoso');
 });
 
 test('renomear e esquecer contas', () => {

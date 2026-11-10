@@ -20,6 +20,12 @@ export function useReportActions({ onChange } = {}) {
 
   const run = useCallback(
     async (key, action, successMessage) => {
+      if (!user?.id) {
+        // visitante: a tela já esconde as ações, mas a regra fica aqui também
+        const error = Object.assign(new Error('guest'), { userMessage: 'Entre com uma conta para relatar ou confirmar.' });
+        toast.show(error.userMessage, { tone: 'info' });
+        throw error;
+      }
       setPending(key);
       try {
         const result = await action();
@@ -33,7 +39,7 @@ export function useReportActions({ onChange } = {}) {
         setPending(null);
       }
     },
-    [onChange, toast],
+    [onChange, toast, user],
   );
 
   const createReport = useCallback(

@@ -6,13 +6,14 @@ import { Tabs } from '../components/ui/Tabs.jsx';
 import { ErrorState, LoadingState } from '../components/ui/States.jsx';
 import { ReportVoteCard } from '../components/reports/ReportVoteCard.jsx';
 import { NewReportForm } from '../components/reports/NewReportForm.jsx';
+import { RequireAccount } from '../components/layout/RequireAccount.jsx';
 import { useRouteDetail } from '../hooks/useRouteDetail.js';
 import { useReportActions } from '../hooks/useReportActions.js';
 import { useCurrentUser } from '../context/UserContext.jsx';
 
 /** Telas 5A (Confirmar relato) e 5B (Novo problema). */
 export function ReportPage({ routeId, segmentId, query, navigate, back }) {
-  const { user } = useCurrentUser();
+  const { user, isGuest } = useCurrentUser();
   const { evaluation, myVotes, findSegment, loading, error, reload } = useRouteDetail(routeId, { reversed: query.inverso === '1' });
   const actions = useReportActions({ onChange: reload });
 
@@ -24,7 +25,7 @@ export function ReportPage({ routeId, segmentId, query, navigate, back }) {
     return [...evaluation.activeReports].sort((a, b) => rank(a) - rank(b));
   }, [evaluation, segmentId, user.id]);
 
-  const pendingCount = reports.filter((r) => r.userId !== user.id && !myVotes.has(r.id)).length;
+  const pendingCount = isGuest ? 0 : reports.filter((r) => r.userId !== user.id && !myVotes.has(r.id)).length;
   const hasReports = reports.length > 0;
   const tab = hasReports && query.aba !== 'novo' ? 'confirmar' : 'novo';
   const setTab = (aba) => navigate(`/rotas/${routeId}/trechos/${segmentId}/relatar`, { ...query, aba }, { replace: true });
@@ -73,7 +74,8 @@ export function ReportPage({ routeId, segmentId, query, navigate, back }) {
               segment={segmentsById.get(report.segmentId)}
               featured={index === 0}
               myVote={myVotes.get(report.id)}
-              isOwn={report.userId === user.id}
+              isOwn={!isGuest && report.userId === user.id}
+              canVote={!isGuest}
               busy={actions.isPending(`vote:${report.id}`)}
               onVote={(id, type) => actions.vote(id, type).catch(() => {})}
               onUndo={(voteId, id) => actions.undoVote(voteId, id).catch(() => {})}
@@ -88,12 +90,14 @@ export function ReportPage({ routeId, segmentId, query, navigate, back }) {
         </div>
       ) : (
         <div role="tabpanel" aria-label="Novo problema">
-          <NewReportForm
-            segments={evaluation.segments.map((s) => s.segment)}
-            initialSegment={current.segment}
-            onSubmit={(report) => handleCreate(report).catch(() => {})}
-            submitting={actions.isPending('create')}
-          />
+          <RequireAccount action="relatar um problema">
+            <NewReportForm
+              segments={evaluation.segments.map((s) => s.segment)}
+              initialSegment={current.segment}
+              onSubmit={(report) => handleCreate(report).catch(() => {})}
+              submitting={actions.isPending('create')}
+            />
+          </RequireAccount>
         </div>
       )}
     </Page>

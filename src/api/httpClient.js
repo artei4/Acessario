@@ -16,6 +16,8 @@ export function toQueryString(query = {}) {
  *   request(method, path, { query, body }) -> Promise<dados>
  */
 export function createHttpClient(baseUrl, { timeoutMs = 10000 } = {}) {
+  let token = null;
+
   async function request(method, path, { query, body, signal } = {}) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -25,7 +27,10 @@ export function createHttpClient(baseUrl, { timeoutMs = 10000 } = {}) {
     try {
       response = await fetch(`${baseUrl}${path}${toQueryString(query)}`, {
         method,
-        headers: body !== undefined ? { 'Content-Type': 'application/json' } : undefined,
+        headers: {
+          ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}),
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: body !== undefined ? JSON.stringify(body) : undefined,
         signal: controller.signal,
       });
@@ -38,10 +43,17 @@ export function createHttpClient(baseUrl, { timeoutMs = 10000 } = {}) {
     if (response.status === 204) return null;
     const data = await response.json().catch(() => null);
     if (!response.ok) {
-      throw new ApiError(data?.error ?? `Erro ${response.status}`, { status: response.status });
+      throw new ApiError(data?.error ?? `Erro ${response.status}`, { status: response.status, code: data?.code });
     }
     return data;
   }
 
-  return { request, mode: 'http' };
+  return {
+    request,
+    /** Token da conta ativa, enviado em todas as requisições (Authorization: Bearer). */
+    setToken: (value) => {
+      token = value ?? null;
+    },
+    mode: 'http',
+  };
 }

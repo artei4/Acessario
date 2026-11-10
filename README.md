@@ -6,6 +6,8 @@ Aplicativo web (React) que encontra rotas a pé considerando a **acessibilidade*
 
 **Stack:** React 19 · Vite · Tailwind CSS v4 · OpenStreetMap + Leaflet · API REST em Node (local) / Vercel Functions + Vercel Blob (produção).
 
+**Outros documentos:** [READMEWEB.md](READMEWEB.md) (o que cada função do código faz) · [integrantes.md](integrantes.md) (equipe) · [AI.md](AI.md) (uso de IA).
+
 ---
 
 ## Sumário
@@ -31,7 +33,7 @@ As telas seguem o protótipo `AcessaRio_prototipo.pdf`.
 
 | # | Tela do protótipo | Rota (hash) | Arquivo |
 |---|---|---|---|
-| — | Entrar (aparece sempre que não há conta ativa) | qualquer | `src/pages/LoginPage.jsx` |
+| — | Entrar, criar conta ou entrar sem conta (aparece quando não há sessão) | qualquer | `src/pages/LoginPage.jsx` |
 | 1 | Perfil de mobilidade | `#/boas-vindas` | `src/pages/OnboardingPage.jsx` |
 | 2 | Busca de destino | `#/buscar` | `src/pages/SearchPage.jsx` |
 | 3 | Rotas e mapa de acessibilidade | `#/rotas?de=…&para=…` | `src/pages/RoutesPage.jsx` |
@@ -72,8 +74,8 @@ O mesmo núcleo REST da API (`shared/restCore.js`) roda dentro do navegador e os
 | `VITE_MAP_PROVIDER` | `osm` | `osm` usa o OpenStreetMap; `schematic` usa o mapa esquemático, sem internet |
 | `VITE_API_MODE` | `http` | `http` usa a API REST; `local` roda tudo no navegador |
 | `VITE_API_URL` | `http://localhost:3001` em desenvolvimento, `/api` publicado | Endereço da API REST |
-| `VITE_USER_ID` | — | Opcional: entra direto nesta conta quando o aparelho ainda não tem sessão (desenvolvimento) |
 | `BLOB_READ_WRITE_TOKEN` | — | Só na Vercel: criado automaticamente ao conectar o Vercel Blob |
+| `AUTH_SECRET` | `BLOB_READ_WRITE_TOKEN` ou um valor de desenvolvimento | Segredo que assina os tokens de login. Na Vercel, recomenda-se definir um valor longo e aleatório |
 
 ### Scripts
 
@@ -129,7 +131,8 @@ O projeto `acessario` na Vercel publica a branch `main` do GitHub (`artei4/Acess
 
 ## Funcionalidades
 
-- **Contas**: tela de entrada pelo nome (cria a conta se não existir e pergunta o perfil de mobilidade), lista de contas usadas no aparelho para trocar com um toque e botão **Sair** no Perfil. Serve, por exemplo, para uma segunda pessoa confirmar um relato; ninguém confirma o próprio relato.
+- **Contas com senha**: abas **Entrar** e **Criar conta** (nome + senha de no mínimo 6 caracteres, com "Mostrar senha" e confirmação). Contas criadas antes das senhas pedem para **definir uma senha** no primeiro acesso. As contas já usadas no aparelho aparecem para preencher o nome com um toque, e o botão **Sair** fica no Perfil. Ninguém confirma o próprio relato.
+- **Entrar sem conta (visitante)**: busca rotas, vê notas, relatos, segurança e o mapa. Perfil de mobilidade, preferências e tema ficam salvos só no aparelho. Para relatar, confirmar relatos, guardar rotas recentes e ver "Meus relatos", o app mostra um convite para entrar ou criar conta.
 - **Modo claro e escuro**: botão de sol/lua nas telas 1 e 2 e escolha entre Claro, Escuro e Automático em Perfil → Aparência. A escolha fica salva no navegador, e o mapa acompanha o tema.
 - **Índice de segurança** por trecho e por rota, baseado só em **ocorrências relatadas pelas pessoas** (assalto, tiroteio, rua escura, local deserto) e em pontos que dão segurança (bem iluminado, comércio aberto, policiamento). Os relatos **perdem peso com o tempo**, e o índice **não classifica bairros**. Ele aparece como selo nos cartões de rota, numa seção de cada trecho, na navegação e numa camada do mapa que pode ser ligada e desligada. A preferência "Evitar trechos com alerta de segurança" tira da recomendação as rotas com alerta.
 - **Perfil de mobilidade** (cadeirante, mobilidade reduzida, deficiência visual, idoso): muda o peso de cada característica do caminho na nota.
@@ -151,7 +154,7 @@ O projeto `acessario` na Vercel publica a branch `main` do GitHub (`artei4/Acess
 | Relatos (`/reports`) | Novo problema, Contribuir | Rotas, trechos, Meus relatos | Editar descrição | Excluir (remove os votos junto) |
 | Votos (`/votes`) | Confirmar / Resolvido / Incorreta | Contagem e status | Trocar o voto | Desfazer voto |
 | Buscas recentes (`/searches`) | Buscar rotas | Rotas recentes | — | Remover da lista |
-| Usuário (`/users`) | Criar conta na entrada | Entrar, Perfil | Perfil, nome, preferências | — |
+| Usuário (`/users`, `/auth`) | Criar conta (`/auth/register`) | Entrar, Perfil | Perfil, nome, preferências | — |
 
 ---
 
@@ -183,20 +186,23 @@ acessario/
 │   └── reset.js            recria o banco local
 ├── shared/
 │   ├── restCore.js         núcleo REST usado pelo servidor, pela Vercel e pelo modo demonstração
+│   ├── api.js              login (/auth/*) e permissões por cima do núcleo REST
+│   ├── auth.js             resumo das senhas (PBKDF2) e tokens assinados (HMAC), com Web Crypto
 │   └── seed.js             dados fictícios com datas relativas
 ├── vercel.json             encaminha /api/<rota> para a função
 ├── src/
 │   ├── api/                httpClient, localClient, ApiError, client (escolhe o modo)
 │   ├── services/           usersService, placesService, routesService, reportsService,
 │   │                       searchesService, networkService, geocodingService (Photon),
-│   │                       routingService (rotas a pé no OSRM), sessionStore (conta ativa no aparelho)
+│   │                       routingService (rotas a pé no OSRM), sessionStore (conta ativa, token e visitante),
+│   │                       authService (criar conta, entrar, definir senha)
 │   ├── domain/             profiles, reportTypes, reportStatus, scoring, safety, geo, summary,
 │   │                       routePlanning (resposta do roteador → rotas e trechos)
 │   ├── hooks/              useAsync, useHashRouter, useRouteOptions, useRouteDetail,
 │   │                       useReportActions, useMyReports, useContribution, usePlaces,
 │   │                       useRecentSearches, useAddressAutocomplete, usePhotoPicker, useEvaluationContext,
 │   │                       useLeafletMap (mapa, eventos e camadas do Leaflet)
-│   ├── context/            UserContext (conta ativa: entrar, trocar, sair; atualização otimista), ThemeContext, ToastContext
+│   ├── context/            UserContext (conta ativa ou visitante: entrar, criar conta, sair; atualização otimista), ThemeContext, ToastContext
 │   ├── components/
 │   │   ├── ui/             Button, Badge, Card/Notice, Field, Icon, IconButton, Toggle, Tabs,
 │   │   │                   ChoiceGrid, ScoreRing, Modal, PhotoField, ThemeToggle, States
@@ -250,15 +256,34 @@ Servidor local em `server/index.js` (porta `3001`); em produção, `/api` no mes
 | `PATCH` | `/:colecao/:id` | Atualiza parte |
 | `DELETE` | `/:colecao/:id` | Remove (em cascata: rota → trechos → relatos → votos; usuário → votos e buscas) |
 
-Coleções: `users`, `places`, `routes`, `segments`, `reports`, `votes`, `searches`.
+Coleções: `users`, `places`, `routes`, `segments`, `reports`, `votes`, `searches`. A coleção `credentials` (resumos das senhas) é privada: a API nunca a devolve.
+
+### Login e permissões
+
+| Método | Caminho | Descrição |
+|---|---|---|
+| `POST` | `/auth/register` | `{ name, password }` → cria a conta e devolve `{ user, token }` (`409` se o nome já existe) |
+| `POST` | `/auth/login` | `{ name, password }` → `{ user, token }` (`401` se nome ou senha errados; `409` com `code: "needs_password"` para conta antiga sem senha) |
+| `POST` | `/auth/claim` | `{ name, password }` → define a senha de uma conta antiga e entra |
+| `GET` | `/auth/me` | Conta do token enviado |
+
+O token vai no cabeçalho `Authorization: Bearer <token>` e vale 30 dias. Regras:
+
+- Ler é livre (inclusive para visitantes).
+- Criar, editar e apagar relatos, votos e buscas exige token, e o `userId` precisa ser o da própria conta. Só o autor edita ou apaga o que criou.
+- Cada pessoa só edita a própria conta. `POST /users` é recusado: contas são criadas por `/auth/register`.
+- Lugares, rotas e trechos podem ser criados por qualquer pessoa, porque o app grava as rotas calculadas também para visitantes.
+- As senhas são guardadas só como resumo PBKDF2-SHA256 (100 mil iterações, sal aleatório). O token é assinado com HMAC-SHA256. Tudo usa a Web Crypto, que funciona no Node e no navegador (modo demonstração).
 
 Exemplos:
 
 ```bash
 curl "http://localhost:3001/routes?originId=p-siqueira&destinationId=p-riosul"
 curl "https://acessario.vercel.app/api/reports?segmentId=r1-t04"
-curl -X POST http://localhost:3001/votes -H "Content-Type: application/json" \
-  -d '{"reportId":"rep-002","userId":"u-jose","type":"confirm"}'
+TOKEN=$(curl -s -X POST http://localhost:3001/auth/register -H "Content-Type: application/json" \
+  -d '{"name":"Ana","password":"segredo123"}' | node -pe 'JSON.parse(require("fs").readFileSync(0)).token')
+curl -X POST http://localhost:3001/votes -H "Content-Type: application/json" -H "Authorization: Bearer $TOKEN" \
+  -d '{"reportId":"rep-002","userId":"<id da Ana>","type":"confirm"}'
 ```
 
 ### Modelo de dados
@@ -340,7 +365,7 @@ Depois, cada relato ativo soma (facilidade) ou subtrai (obstáculo) seus pontos 
 npm test
 ```
 
-49 testes com `node:test` cobrem: sessão (entrar, sair, contas do aparelho, armazenamento bloqueado), comparação de nomes, validade e níveis do índice de segurança, separação entre segurança e acessibilidade, preferência de evitar alertas, relatos ligados a rotas pela localização, relatos só com localização na API, conversão dos lugares do Photon (incluindo endereços sem nome), conversão das rotas do roteador em trechos, trechos sem levantamento, gravação e cascata de rotas, ciclo de status dos relatos, desatualização, peso dos relatos, bloqueio por perfil, preferência por rotas planas, impacto de um relato na nota, ranqueamento com os dados de demonstração, rota no sentido inverso, CRUD/validação/cascata da API, leitura de rotas da Vercel Function, armazenamento no Blob (com um Blob simulado), enquadramento do mapa e localização do trecho mais próximo.
+57 testes com `node:test` cobrem: senhas e tokens (resumo, senha errada, token adulterado ou vencido), login, criação de conta e definição de senha de contas antigas, permissões da API (sem token, com token de outra pessoa, coleção de senhas escondida), sessão (entrar, sair, token, modo visitante, contas do aparelho, armazenamento bloqueado), comparação de nomes, validade e níveis do índice de segurança, separação entre segurança e acessibilidade, preferência de evitar alertas, relatos ligados a rotas pela localização, relatos só com localização na API, conversão dos lugares do Photon (incluindo endereços sem nome), conversão das rotas do roteador em trechos, trechos sem levantamento, gravação e cascata de rotas, ciclo de status dos relatos, desatualização, peso dos relatos, bloqueio por perfil, preferência por rotas planas, impacto de um relato na nota, ranqueamento com os dados de demonstração, rota no sentido inverso, CRUD/validação/cascata da API, leitura de rotas da Vercel Function, armazenamento no Blob (com um Blob simulado), enquadramento do mapa e localização do trecho mais próximo.
 
 ---
 
@@ -356,7 +381,10 @@ npm test
 
 ## Limitações e próximos passos
 
-- A entrada é só pelo nome, sem senha: qualquer pessoa que digitar "José" entra na conta do José. Para contas reais, o próximo passo é senha com hash guardado fora da coleção pública `users` e uma rota de login no servidor.
+- Não há recuperação de senha (o app não pede e-mail). Quem esquecer a senha precisa criar outra conta.
+- O token fica no `localStorage` e não pode ser revogado antes de vencer (30 dias). Para usuários reais, o ideal seria um cookie `HttpOnly` e sessões guardadas no servidor.
+- Não há limite de tentativas de senha. Com usuários reais, seria preciso limitar tentativas por IP e por conta.
+- No modo demonstração (sem servidor) a API roda no navegador, então as senhas protegem só contra outra pessoa usando o app, não contra quem abre o `localStorage`.
 - Rotas calculadas pelo roteador começam sem dados de acessibilidade. O próximo passo seria ler as etiquetas de acessibilidade do próprio OpenStreetMap (`highway=steps`, `incline`, `surface`, `kerb`, `wheelchair`) pela Overpass API e preencher o levantamento inicial dos trechos.
 - O roteador público usa o perfil a pé padrão, que não evita escadas. As regras do app avisam quando um trecho tem escadas relatadas, mas o caminho em si não muda.
 - O banco no Vercel Blob é um arquivo JSON público com nome difícil de adivinhar. Funciona para a demonstração; com usuários reais, o ideal é um banco de dados (ex.: Postgres) e fotos em armazenamento privado.

@@ -8,8 +8,6 @@ export const config = {
    * "local" roda o mesmo núcleo REST no navegador, com localStorage (npm run dev:demo).
    */
   apiMode: env.VITE_API_MODE === 'local' ? 'local' : 'http',
-  /** Opcional: entra direto nesta conta quando o aparelho ainda não tem sessão (útil em desenvolvimento). */
-  currentUserId: env.VITE_USER_ID || null,
   /** Busca de lugares enquanto se digita: Photon, geocodificador baseado no OpenStreetMap. */
   geocodingUrl: env.VITE_GEOCODING_URL || 'https://photon.komoot.io',
   /** Roteador a pé do OpenStreetMap (OSRM da FOSSGIS, o mesmo do site openstreetmap.org). */

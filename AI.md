@@ -116,3 +116,24 @@ UserContext ganhou signIn, switchTo e signOut. Se a conta salva no aparelho não
 Decisão registrada: por ser protótipo, a entrada é só pelo nome, sem senha. A tela avisa isso. Senhas pediriam guardar hashes fora da coleção pública users e criar uma rota de login no servidor, o que fica como próximo passo.
 Verificação: 49 testes. No navegador, com o servidor local: José entrou digitando "jose" (sem acento), criou um relato e saiu; Maria criou a conta, escolheu o perfil e confirmou o relato do José (voto gravado com o id da Maria); José voltou pela lista do aparelho, viu "1 confirmação" em Meus relatos e não conseguiu confirmar o próprio relato.
 
+
+Décima rodada: senhas, entrar sem conta e documentação
+A pessoa pediu três coisas: entrada com senha, uma opção para usar o app sem criar conta e dois arquivos novos, READMEWEB.md (o que cada função faz, em linguagem simples) e integrantes.md (nomes e RM da equipe).
+
+Senhas no servidor: shared/auth.js guarda só o resumo da senha (PBKDF2-SHA256, 100 mil iterações, sal aleatório) e cria tokens assinados (HMAC-SHA256, 30 dias). Usa a Web Crypto, então o mesmo código roda no servidor Node, na Vercel e no modo demonstração dentro do navegador.
+Os resumos ficam numa coleção separada (credentials), que a API nunca devolve. Assim a coleção pública users continua sem dados sensíveis.
+Rotas novas: /auth/register, /auth/login, /auth/claim e /auth/me, em shared/api.js, por cima do núcleo REST que já existia.
+Permissões: ler continua livre. Relatos, votos e buscas exigem token, e o userId precisa ser o da própria conta. Só o autor edita ou apaga. Cada pessoa só edita a própria conta. POST /users passou a ser recusado.
+Contas antigas: as contas criadas antes das senhas (como a do José no site publicado) não foram apagadas. No primeiro acesso, o login responde 409 com code needs_password, e a tela pede para definir uma senha.
+Visitante: o botão "Entrar sem conta" abre o app em modo leitura. O visitante busca rotas e vê notas, relatos e segurança. Perfil, preferências e tema ficam só no aparelho. Onde é preciso conta (relatar, votar, rotas recentes, meus relatos), o componente RequireAccount mostra um convite para entrar. useReportActions também recusa visitantes, então a regra não depende só da tela.
+Front-end: authService (novo), sessionStore com token e modo visitante, UserContext com signIn, signUp, claim, enterAsGuest e signOut, e LoginPage com abas Entrar e Criar conta, "Mostrar senha" e confirmação de senha.
+Escolha registrada: a IA manteve o token no localStorage por simplicidade e listou no README o que mudaria com usuários reais (cookie HttpOnly, limite de tentativas, recuperação de senha).
+Erro encontrado nos testes: o teste do servidor que criava um relato sem token passou a receber 401, o que era o comportamento esperado. O teste foi ajustado para enviar um token.
+READMEWEB.md foi escrito a partir da lista de tudo que cada arquivo exporta, organizado por pasta e seguindo o caminho tela → hooks → services → API.
+Verificação: 57 testes. No navegador, com o servidor local, foram conferidos:
+- José (conta antiga) definiu a senha.
+- Senha errada foi recusada, e a certa entrou.
+- Nome repetido e senha curta foram recusados na criação de conta.
+- Maria criou a conta.
+- POST /reports sem token devolveu 401, e GET /credentials devolveu 404.
+- O visitante calculou rotas, viu os relatos sem os botões de voto, recebeu o convite em Novo problema e no Perfil, e nenhuma busca foi gravada.

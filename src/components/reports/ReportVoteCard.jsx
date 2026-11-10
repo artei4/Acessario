@@ -22,7 +22,7 @@ const SAFETY_VOTES = VOTES.map((v) =>
 const VOTE_LABEL = { confirm: 'confirmou', resolved: 'disse que foi resolvido', incorrect: 'disse que está incorreta' };
 
 /** Cartão da aba "Confirmar relato" (tela 5A): mostra o relato e os três votos possíveis. */
-export function ReportVoteCard({ report, segment, myVote, onVote, onUndo, busy, featured = false, isOwn = false }) {
+export function ReportVoteCard({ report, segment, myVote, onVote, onUndo, busy, featured = false, isOwn = false, canVote = true }) {
   const type = getReportType(report);
   const { confirm, incorrect, resolved } = report.tally;
   const total = confirm + incorrect + resolved || 1;
@@ -65,6 +65,8 @@ export function ReportVoteCard({ report, segment, myVote, onVote, onUndo, busy, 
 
       {isOwn ? (
         <p className="m-0 text-xs text-ink-soft">Este relato é seu. Outras pessoas precisam confirmá-lo.</p>
+      ) : !canVote ? (
+        <p className="m-0 text-xs text-ink-soft">Entre com uma conta para confirmar ou contestar este relato.</p>
       ) : (
         <>
           {featured && <p className="m-0 text-[13px] font-bold">Você viu esse problema?</p>}

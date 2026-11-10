@@ -13,3 +13,6 @@ export const api = {
   patch: (path, body) => apiClient.request('PATCH', path, { body }),
   delete: (path) => apiClient.request('DELETE', path),
 };
+
+/** Define o token da conta ativa (ou null para visitante). Vale para todas as requisições seguintes. */
+export const setAuthToken = (token) => apiClient.setToken(token);

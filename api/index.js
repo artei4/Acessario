@@ -8,6 +8,7 @@
  */
 import * as blob from '@vercel/blob';
 import { CORS_HEADERS, resolveRoute, runApiRequest } from '../server/handler.js';
+import { tokenFromHeader } from '../shared/api.js';
 import { createBlobStore, createMemoryStore } from '../server/stores.js';
 
 const store = process.env.BLOB_READ_WRITE_TOKEN ? createBlobStore({ blob }) : createMemoryStore();
@@ -21,7 +22,8 @@ export default async function handler(req, res) {
   const { path, query } = resolveRoute(req.url);
   try {
     const body = typeof req.body === 'string' && req.body ? JSON.parse(req.body) : req.body;
-    const result = await runApiRequest(store, { method: req.method, path, query, body });
+    const token = tokenFromHeader(req.headers?.authorization);
+    const result = await runApiRequest(store, { method: req.method, path, query, body, token });
     if (result.body === null) return res.status(result.status).end();
     return res.status(result.status).json(result.body);
   } catch (error) {

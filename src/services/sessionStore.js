@@ -1,12 +1,18 @@
 /**
- * Sessão do aparelho: qual conta está ativa e quais contas já entraram aqui
- * (para trocar de conta com um toque). Fica no localStorage do navegador.
+ * Sessão do aparelho (localStorage):
+ *  - conta ativa e o token dela, ou o modo visitante;
+ *  - contas que já entraram aqui (só id e nome, para preencher o nome na entrada);
+ *  - perfil e preferências do visitante, que ficam só neste aparelho.
  *
  * `createSessionStore(storage)` recebe o armazenamento, o que permite testar sem navegador.
  */
 const CURRENT_KEY = 'acessario:session:userId';
+const TOKEN_KEY = 'acessario:session:token';
 const KNOWN_KEY = 'acessario:session:known';
+const GUEST_KEY = 'acessario:session:guest';
 const MAX_KNOWN = 6;
+
+export const GUEST = 'guest';
 
 function safe(fn, fallback) {
   try {
@@ -17,20 +23,37 @@ function safe(fn, fallback) {
 }
 
 export function createSessionStore(storage) {
-  const readKnown = () => safe(() => JSON.parse(storage.getItem(KNOWN_KEY)) ?? [], []);
+  const readJson = (key, fallback) => safe(() => JSON.parse(storage.getItem(key)) ?? fallback, fallback);
+  const readKnown = () => readJson(KNOWN_KEY, []);
 
   return {
+    /** Id da conta ativa, GUEST para visitante, ou null. */
     currentUserId: () => safe(() => storage.getItem(CURRENT_KEY), null),
+    token: () => safe(() => storage.getItem(TOKEN_KEY), null),
 
     /** Contas que já entraram neste aparelho, da mais recente para a mais antiga: [{ id, name }]. */
     knownAccounts: readKnown,
 
-    signIn(user) {
+    signIn(user, token) {
       const known = [{ id: user.id, name: user.name }, ...readKnown().filter((a) => a.id !== user.id)].slice(0, MAX_KNOWN);
       safe(() => {
         storage.setItem(CURRENT_KEY, user.id);
+        if (token) storage.setItem(TOKEN_KEY, token);
         storage.setItem(KNOWN_KEY, JSON.stringify(known));
       });
+    },
+
+    enterAsGuest() {
+      safe(() => {
+        storage.setItem(CURRENT_KEY, GUEST);
+        storage.removeItem(TOKEN_KEY);
+      });
+    },
+
+    /** Perfil e preferências do visitante: { profile, preferences }. */
+    guestData: () => readJson(GUEST_KEY, {}),
+    saveGuestData(data) {
+      safe(() => storage.setItem(GUEST_KEY, JSON.stringify(data)));
     },
 
     /** Atualiza o nome guardado (quando a pessoa edita o perfil). */
@@ -39,8 +62,12 @@ export function createSessionStore(storage) {
       safe(() => storage.setItem(KNOWN_KEY, JSON.stringify(known)));
     },
 
+    /** Sai da conta: apaga o token; para voltar, é preciso a senha. */
     signOut() {
-      safe(() => storage.removeItem(CURRENT_KEY));
+      safe(() => {
+        storage.removeItem(CURRENT_KEY);
+        storage.removeItem(TOKEN_KEY);
+      });
     },
 
     forget(userId) {

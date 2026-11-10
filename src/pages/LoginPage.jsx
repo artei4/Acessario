@@ -1,37 +1,77 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Page } from '../components/layout/Page.jsx';
 import { Button } from '../components/ui/Button.jsx';
-import { Card, Notice, SectionTitle } from '../components/ui/Card.jsx';
+import { Notice, SectionTitle } from '../components/ui/Card.jsx';
 import { FieldError, TextInput } from '../components/ui/Field.jsx';
 import { Icon } from '../components/ui/Icon.jsx';
+import { Tabs } from '../components/ui/Tabs.jsx';
 import { ThemeToggleButton } from '../components/ui/ThemeToggle.jsx';
 import { useCurrentUser } from '../context/UserContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
+import { MIN_PASSWORD_LENGTH } from '../../shared/auth.js';
 
-/** Tela de entrada: pelo nome (cria a conta se não existir) ou por uma conta já usada neste aparelho. */
+const MODES = [
+  { id: 'login', label: 'Entrar' },
+  { id: 'register', label: 'Criar conta' },
+];
+
+const TITLES = {
+  login: { title: 'Entrar', text: 'Use o nome e a senha da sua conta.', button: 'Entrar' },
+  register: { title: 'Criar conta', text: 'Com uma conta você relata problemas e confirma relatos de outras pessoas.', button: 'Criar conta' },
+  claim: { title: 'Definir senha', text: 'Esta conta foi criada antes das senhas existirem. Escolha uma senha para continuar.', button: 'Salvar senha e entrar' },
+};
+
+/** Tela de entrada: entrar com senha, criar conta, definir senha de conta antiga ou usar como visitante. */
 export function LoginPage({ navigate }) {
-  const { signIn, switchTo, knownAccounts } = useCurrentUser();
+  const { signIn, signUp, claim, enterAsGuest, knownAccounts } = useCurrentUser();
   const toast = useToast();
-  const [name, setName] = useState('');
+  const [mode, setMode] = useState('login');
+  const [name, setName] = useState(knownAccounts[0]?.name ?? '');
+  const [password, setPassword] = useState('');
+  const [confirm, setConfirm] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState(null);
-  const [notFound, setNotFound] = useState(null); // nome digitado que não tem conta
   const [busy, setBusy] = useState(false);
+  const passwordRef = useRef(null);
 
-  const finish = (user, created) => {
-    toast.show(created ? `Conta criada. Bem-vindo, ${user.name}!` : `Olá de novo, ${user.name}!`);
+  const copy = TITLES[mode];
+  const choosing = mode !== 'claim';
+
+  const changeMode = (next) => {
+    setMode(next);
+    setError(null);
+    setPassword('');
+    setConfirm('');
+  };
+
+  const done = (user, created) => {
+    toast.show(created ? `Conta criada. Bem-vindo, ${user.name}!` : `Olá, ${user.name}!`);
     // conta nova vai para a escolha do perfil de mobilidade (o App cuida disso)
     if (!created) navigate('/buscar', undefined, { replace: true });
   };
 
-  const run = async (create) => {
-    const trimmed = name.trim();
-    if (trimmed.length < 2) return setError('Digite seu nome (pelo menos 2 letras).');
+  const submit = async (event) => {
+    event.preventDefault();
+    if (name.trim().length < 2) return setError('Digite seu nome (pelo menos 2 letras).');
+    if (password.length < (mode === 'login' ? 1 : MIN_PASSWORD_LENGTH)) {
+      return setError(mode === 'login' ? 'Digite sua senha.' : `A senha precisa ter pelo menos ${MIN_PASSWORD_LENGTH} caracteres.`);
+    }
+    if (mode !== 'login' && password !== confirm) return setError('As duas senhas não são iguais.');
     setError(null);
     setBusy(true);
     try {
-      const result = await signIn(trimmed, { create });
-      if (result.user) finish(result.user, result.created);
-      else setNotFound(trimmed);
+      if (mode === 'login') {
+        const result = await signIn(name.trim(), password);
+        if (result.needsPassword) {
+          changeMode('claim');
+          return;
+        }
+        done(result.user, false);
+      } else if (mode === 'register') {
+        done((await signUp(name.trim(), password)).user, true);
+      } else {
+        done((await claim(name.trim(), password)).user, false);
+      }
     } catch (err) {
       setError(err.userMessage ?? 'Não foi possível entrar. Tente de novo.');
     } finally {
@@ -39,99 +79,136 @@ export function LoginPage({ navigate }) {
     }
   };
 
+  const useGuest = () => {
+    enterAsGuest();
+    toast.show('Você está usando o app como visitante.', { tone: 'info' });
+  };
+
   return (
     <Page flush withNav={false}>
-      <header className="relative -mx-4 overflow-hidden rounded-b-3xl bg-navy px-6 pt-12 pb-8 text-center text-on-navy">
+      <header className="relative -mx-4 overflow-hidden rounded-b-3xl bg-navy px-6 pt-10 pb-7 text-center text-on-navy">
         <ThemeToggleButton onDark className="absolute top-3 right-3" />
         <div className="mb-2 flex justify-center">
-          <Icon name="pin" size={40} strokeWidth={2.2} />
+          <Icon name="pin" size={36} strokeWidth={2.2} />
         </div>
-        <p className="m-0 text-[34px] font-extrabold tracking-tight">
+        <p className="m-0 text-[32px] font-extrabold tracking-tight">
           Acessa<span className="text-logo">Rio</span>
         </p>
         <p className="m-0 text-sm opacity-85">Navegação urbana inclusiva</p>
       </header>
 
-      <div className="mt-2 flex flex-col gap-1">
-        <h1 className="text-2xl font-extrabold tracking-tight">Entrar</h1>
-        <p className="m-0 text-ink-soft">Use seu nome. Se ainda não tiver conta, criamos uma na hora.</p>
+      {choosing && <Tabs tabs={MODES} value={mode} onChange={changeMode} label="Entrar ou criar conta" />}
+
+      <div className="flex flex-col gap-1">
+        <h1 className="text-2xl font-extrabold tracking-tight">{copy.title}</h1>
+        <p className="m-0 text-ink-soft">{copy.text}</p>
       </div>
 
-      <form
-        className="flex flex-col gap-2.5"
-        noValidate
-        onSubmit={(e) => {
-          e.preventDefault();
-          run(false);
-        }}
-      >
-        <label className="flex flex-col gap-1.5" htmlFor="login-name">
-          <span className="text-sm font-bold">Seu nome</span>
-        </label>
-        <TextInput
-          id="login-name"
-          autoComplete="nickname"
-          placeholder="Ex.: Maria"
-          value={name}
-          maxLength={40}
-          onChange={(e) => {
-            setName(e.target.value);
-            setNotFound(null);
-          }}
-        />
+      <form className="flex flex-col gap-3" noValidate onSubmit={submit}>
+        <div className="flex flex-col gap-1.5">
+          <label className="text-sm font-bold" htmlFor="login-name">
+            Nome
+          </label>
+          <TextInput
+            id="login-name"
+            autoComplete="username"
+            placeholder="Ex.: Maria"
+            value={name}
+            maxLength={40}
+            readOnly={mode === 'claim'}
+            onChange={(e) => setName(e.target.value)}
+          />
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <div className="flex items-center justify-between">
+            <label className="text-sm font-bold" htmlFor="login-password">
+              {mode === 'login' ? 'Senha' : 'Nova senha'}
+            </label>
+            <button type="button" className="cursor-pointer text-xs font-semibold text-brand" aria-pressed={showPassword} onClick={() => setShowPassword((v) => !v)}>
+              {showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+            </button>
+          </div>
+          <TextInput
+            id="login-password"
+            ref={passwordRef}
+            type={showPassword ? 'text' : 'password'}
+            autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            aria-describedby={mode === 'login' ? undefined : 'password-hint'}
+          />
+          {mode !== 'login' && (
+            <span id="password-hint" className="text-xs text-ink-soft">
+              Pelo menos {MIN_PASSWORD_LENGTH} caracteres.
+            </span>
+          )}
+        </div>
+
+        {mode !== 'login' && (
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-bold" htmlFor="login-confirm">
+              Repita a senha
+            </label>
+            <TextInput
+              id="login-confirm"
+              type={showPassword ? 'text' : 'password'}
+              autoComplete="new-password"
+              value={confirm}
+              onChange={(e) => setConfirm(e.target.value)}
+            />
+          </div>
+        )}
+
         {error && <FieldError role="alert">{error}</FieldError>}
 
-        {notFound ? (
-          <Card variant="soft" className="flex flex-col gap-2" role="status">
-            <p className="m-0 text-[13px]">
-              Não encontramos uma conta com o nome <strong>“{notFound}”</strong>.
-            </p>
-            <div className="grid grid-cols-2 gap-2">
-              <Button variant="secondary" onClick={() => document.getElementById('login-name')?.focus()}>
-                Corrigir o nome
-              </Button>
-              <Button onClick={() => run(true)} loading={busy}>
-                Criar conta
-              </Button>
-            </div>
-          </Card>
-        ) : (
-          <Button type="submit" size="lg" block loading={busy}>
-            Entrar
+        <Button type="submit" size="lg" block loading={busy}>
+          {copy.button}
+        </Button>
+        {mode === 'claim' && (
+          <Button variant="ghost" onClick={() => changeMode('login')}>
+            Voltar
           </Button>
         )}
       </form>
 
-      {knownAccounts.length > 0 && (
+      {choosing && knownAccounts.length > 0 && (
         <section className="flex flex-col gap-1.5" aria-labelledby="known-title">
           <SectionTitle id="known-title">Contas usadas neste aparelho</SectionTitle>
-          <ul className="m-0 flex list-none flex-col gap-1.5 p-0">
+          <div className="flex flex-wrap gap-1.5">
             {knownAccounts.map((account) => (
-              <li key={account.id}>
-                <button
-                  type="button"
-                  className="flex w-full cursor-pointer items-center gap-3 rounded-xl border border-line bg-surface p-2.5 text-left hover:border-brand"
-                  onClick={() => {
-                    switchTo(account);
-                    finish(account, false);
-                  }}
-                >
-                  <span className="grid size-9 flex-none place-items-center rounded-full bg-brand font-extrabold text-on-brand" aria-hidden="true">
-                    {account.name.charAt(0).toUpperCase()}
-                  </span>
-                  <span className="flex-1 font-bold">{account.name}</span>
-                  <span className="text-[13px] font-semibold text-brand">Entrar</span>
-                </button>
-              </li>
+              <button
+                key={account.id}
+                type="button"
+                className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-line bg-surface py-1 pr-3 pl-1 text-[13px] font-semibold hover:border-brand"
+                onClick={() => {
+                  changeMode('login');
+                  setName(account.name);
+                  passwordRef.current?.focus();
+                }}
+              >
+                <span className="grid size-7 place-items-center rounded-full bg-brand text-xs font-extrabold text-on-brand" aria-hidden="true">
+                  {account.name.charAt(0).toUpperCase()}
+                </span>
+                {account.name}
+              </button>
             ))}
-          </ul>
+          </div>
         </section>
       )}
 
-      <Notice>
-        Para testar a confirmação de relatos, entre com outro nome: a conta é criada na hora. Ninguém pode confirmar o próprio relato.
-      </Notice>
-      <p className="m-0 text-xs text-ink-soft">Protótipo: a entrada é só pelo nome, sem senha. Não use dados pessoais sensíveis.</p>
+      {choosing && (
+        <div className="flex flex-col gap-2 border-t border-line pt-3">
+          <Button variant="secondary" block icon="user" onClick={useGuest}>
+            Entrar sem conta
+          </Button>
+          <p className="m-0 text-center text-xs text-ink-soft">
+            Como visitante você busca rotas e vê os relatos. Para relatar ou confirmar, é preciso uma conta.
+          </p>
+        </div>
+      )}
+
+      <Notice>A senha é guardada de forma protegida (só o resumo criptográfico, nunca a senha).</Notice>
     </Page>
   );
 }

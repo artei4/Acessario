@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { resolveRoute, runApiRequest } from '../server/handler.js';
+import { AUTH_SECRET, resolveRoute, runApiRequest } from '../server/handler.js';
+import { createToken } from '../shared/auth.js';
 import { createBlobStore, createMemoryStore } from '../server/stores.js';
 
 test('resolveRoute aceita a URL original e a reescrita pelo vercel.json', () => {
@@ -15,7 +16,8 @@ test('runApiRequest salva na loja só quando algo muda', async () => {
   const save = store.save;
   store.save = async (db) => { saves += 1; return save(db); };
   await runApiRequest(store, { method: 'GET', path: '/reports' });
-  await runApiRequest(store, { method: 'POST', path: '/reports', body: { segmentId: 's', type: 'obra', kind: 'obstacle', userId: 'u' } });
+  const token = await createToken('u', AUTH_SECRET);
+  await runApiRequest(store, { method: 'POST', path: '/reports', token, body: { segmentId: 's', type: 'obra', kind: 'obstacle', userId: 'u' } });
   assert.equal(saves, 1);
   assert.equal((await store.load()).reports.length, 1);
 });

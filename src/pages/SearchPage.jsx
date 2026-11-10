@@ -50,7 +50,7 @@ function RecentReportsCard({ recent, loading }) {
 
 /** Tela 2 — Busca de destino. */
 export function SearchPage({ navigate }) {
-  const { user } = useCurrentUser();
+  const { user, isGuest } = useCurrentUser();
   const toast = useToast();
   const { byId, search, places, ensure } = usePlaces();
   const { searches, record } = useRecentSearches(user.id);
@@ -86,7 +86,7 @@ export function SearchPage({ navigate }) {
       return toast.show(error.userMessage ?? 'Não foi possível salvar os lugares.', { tone: 'danger' });
     }
     try {
-      await record(savedOrigin.id, savedDestination.id);
+      if (!isGuest) await record(savedOrigin.id, savedDestination.id);
     } catch {
       // a busca recente é um extra: não impede de ver as rotas
     }

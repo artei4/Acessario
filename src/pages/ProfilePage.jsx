@@ -11,6 +11,7 @@ import { ThemeSelector } from '../components/ui/ThemeToggle.jsx';
 import { ErrorState, LoadingState } from '../components/ui/States.jsx';
 import { MyReportItem } from '../components/reports/MyReportItem.jsx';
 import { ContributeForm } from '../components/reports/ContributeForm.jsx';
+import { RequireAccount } from '../components/layout/RequireAccount.jsx';
 import { useCurrentUser } from '../context/UserContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import { useMyReports } from '../hooks/useMyReports.js';
@@ -76,7 +77,7 @@ function EditProfileModal({ user, onSave, onClose }) {
 
 /** Tela 6 — Perfil, preferências e contribuições. */
 export function ProfilePage({ query, navigate }) {
-  const { user, updateUser, setPreference, signOut } = useCurrentUser();
+  const { user, isGuest, updateUser, setPreference, signOut } = useCurrentUser();
   const toast = useToast();
   const { byId } = usePlaces();
   const recent = useRecentSearches(user.id);
@@ -120,16 +121,23 @@ export function ProfilePage({ query, navigate }) {
         </span>
         <div className="flex-1">
           <h1 className="text-lg font-bold">{user.name}</h1>
-          <Badge tone="info">{getProfile(user.profile).label}</Badge>
+          <div className="flex flex-wrap gap-1">
+            <Badge tone="info">{getProfile(user.profile).label}</Badge>
+            {isGuest && <Badge tone="neutral">Sem conta</Badge>}
+          </div>
         </div>
         <div className="flex items-center">
           <Button variant="ghost" onClick={() => setEditing(true)}>
             Editar
           </Button>
-          <Button variant="ghost-danger" icon="logout" onClick={() => {
-            signOut();
-            toast.show('Você saiu da conta.', { tone: 'info' });
-          }}>
+          <Button
+            variant="ghost-danger"
+            icon="logout"
+            onClick={() => {
+              signOut();
+              toast.show(isGuest ? 'Você saiu do modo visitante.' : 'Você saiu da conta.', { tone: 'info' });
+            }}
+          >
             Sair
           </Button>
         </div>
@@ -156,6 +164,9 @@ export function ProfilePage({ query, navigate }) {
         <p className="m-0 text-xs text-ink-soft">Automático segue o tema do seu aparelho.</p>
       </Card>
 
+      {isGuest ? (
+        <RequireAccount action="salvar rotas recentes e ver seus relatos" />
+      ) : (
       <div className="grid grid-cols-1 items-start gap-2 min-[381px]:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
         <Card as="section" className="flex flex-col gap-1.5 p-3" aria-labelledby="recent-title">
           <h2 id="recent-title" className="text-[13px] font-bold">
@@ -203,6 +214,7 @@ export function ProfilePage({ query, navigate }) {
           </ul>
         </Card>
       </div>
+      )}
 
       <Card as="section" variant="highlight" ref={contributeRef} className="flex scroll-mt-3 flex-col gap-3" aria-labelledby="contribute-title">
         <div className="flex flex-wrap items-center justify-between gap-2">
@@ -211,7 +223,9 @@ export function ProfilePage({ query, navigate }) {
           </h2>
           <span className="text-xs text-ink-soft">Em qualquer lugar</span>
         </div>
-        <ContributeForm onCreated={mine.reload} />
+        <RequireAccount action="contribuir com o mapa">
+          <ContributeForm onCreated={mine.reload} />
+        </RequireAccount>
       </Card>
 
       {apiClient.mode === 'local' && (

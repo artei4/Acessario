@@ -9,6 +9,7 @@ import { createServer } from 'node:http';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { parseQueryString } from '../shared/restCore.js';
+import { tokenFromHeader } from '../shared/api.js';
 import { CORS_HEADERS, runApiRequest } from './handler.js';
 import { createFileStore } from './stores.js';
 
@@ -51,13 +52,16 @@ const server = createServer(async (req, res) => {
   const [path, search = ''] = req.url.split('?');
   try {
     const body = await readBody(req);
-    const result = await runApiRequest(store, { method: req.method, path, query: parseQueryString(search), body });
+    const token = tokenFromHeader(req.headers.authorization);
+    const result = await runApiRequest(store, { method: req.method, path, query: parseQueryString(search), body, token });
     console.log(`${req.method} ${req.url} → ${result.status}`);
     send(res, result.status, result.body);
   } catch (error) {
     send(res, error.status ?? 500, { error: error.message });
   }
 });
+
+if (!process.env.AUTH_SECRET) console.warn('AUTH_SECRET não definido: usando o segredo de desenvolvimento para assinar os tokens.');
 
 server.listen(PORT, async () => {
   console.log(`API do AcessaRio em http://localhost:${PORT}`);
