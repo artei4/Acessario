@@ -133,6 +133,8 @@ O projeto `acessario` na Vercel publica a branch `main` do GitHub (`artei4/Acess
 
 - **Contas com senha**: abas **Entrar** e **Criar conta** (nome + senha de no mínimo 6 caracteres, com "Mostrar senha" e confirmação). Contas criadas antes das senhas pedem para **definir uma senha** no primeiro acesso. As contas já usadas no aparelho aparecem para preencher o nome com um toque, e o botão **Sair** fica no Perfil. Ninguém confirma o próprio relato.
 - **Entrar sem conta (visitante)**: busca rotas, vê notas, relatos, segurança e o mapa. Perfil de mobilidade, preferências e tema ficam salvos só no aparelho. Para relatar, confirmar relatos, guardar rotas recentes e ver "Meus relatos", o app mostra um convite para entrar ou criar conta.
+- **Guia por voz (para pessoas cegas ou com baixa visão)**: o botão **Ouvir o app** (na entrada, no primeiro acesso e em Perfil → Acessibilidade) ou o atalho **Alt+V** liga a voz. O app lê o resumo de cada tela, o item em foco, os avisos e cada passo da navegação. Também há botões **Ouvir** nas rotas, nos trechos e na navegação, e um **microfone** nos campos de origem e destino para falar o nome do lugar. Veja [Acessibilidade](#acessibilidade).
+- **Teste de cores (daltonismo)**: em vez de escolher numa lista, a pessoa toca em **Tenho daltonismo** e faz um teste de 10 círculos de bolinhas. Pelo resultado, o app troca as cores do mapa, das notas e dos avisos, e as linhas do mapa ganham padrões (contínua, tracejada, pontilhada). Veja [Acessibilidade](#acessibilidade).
 - **Modo claro e escuro**: botão de sol/lua nas telas 1 e 2 e escolha entre Claro, Escuro e Automático em Perfil → Aparência. A escolha fica salva no navegador, e o mapa acompanha o tema.
 - **Índice de segurança** por trecho e por rota, baseado só em **ocorrências relatadas pelas pessoas** (assalto, tiroteio, rua escura, local deserto) e em pontos que dão segurança (bem iluminado, comércio aberto, policiamento). Os relatos **perdem peso com o tempo**, e o índice **não classifica bairros**. Ele aparece como selo nos cartões de rota, numa seção de cada trecho, na navegação e numa camada do mapa que pode ser ligada e desligada. A preferência "Evitar trechos com alerta de segurança" tira da recomendação as rotas com alerta.
 - **Perfil de mobilidade** (cadeirante, mobilidade reduzida, deficiência visual, idoso): muda o peso de cada característica do caminho na nota.
@@ -195,14 +197,18 @@ acessario/
 │   ├── services/           usersService, placesService, routesService, reportsService,
 │   │                       searchesService, networkService, geocodingService (Photon),
 │   │                       routingService (rotas a pé no OSRM), sessionStore (conta ativa, token e visitante),
-│   │                       authService (criar conta, entrar, definir senha)
+│   │                       authService (criar conta, entrar, definir senha), speech (síntese de voz)
 │   ├── domain/             profiles, reportTypes, reportStatus, scoring, safety, geo, summary,
-│   │                       routePlanning (resposta do roteador → rotas e trechos)
+│   │                       routePlanning (resposta do roteador → rotas e trechos),
+│   │                       colorVision (simulação de daltonismo, pranchas e resultado do teste),
+│   │                       visionPalettes (paletas por tipo de daltonismo)
 │   ├── hooks/              useAsync, useHashRouter, useRouteOptions, useRouteDetail,
 │   │                       useReportActions, useMyReports, useContribution, usePlaces,
 │   │                       useRecentSearches, useAddressAutocomplete, usePhotoPicker, useEvaluationContext,
-│   │                       useLeafletMap (mapa, eventos e camadas do Leaflet)
-│   ├── context/            UserContext (conta ativa ou visitante: entrar, criar conta, sair; atualização otimista), ThemeContext, ToastContext
+│   │                       useLeafletMap (mapa, eventos e camadas do Leaflet),
+│   │                       useColorTest (andamento do teste de cores), useSpeechRecognition (ditado por voz)
+│   ├── context/            UserContext (conta ativa ou visitante: entrar, criar conta, sair; atualização otimista), ThemeContext, ToastContext,
+│   │                       AccessibilityContext (paleta de cores, guia por voz, atalhos, leitura do foco)
 │   ├── components/
 │   │   ├── ui/             Button, Badge, Card/Notice, Field, Icon, IconButton, Toggle, Tabs,
 │   │   │                   ChoiceGrid, ScoreRing, Modal, PhotoField, ThemeToggle, States
@@ -211,6 +217,9 @@ acessario/
 │   │   │                   mapAdapters, mapGeometry, projection
 │   │   ├── safety/         SafetyBadge/SafetyLine, SafetySection, SafetyLayerToggle
 │   │   ├── places/         PlaceSearchBox (busca de lugares com sugestões, usada em dois lugares)
+│   │   ├── accessibility/  AccessibilityQuickStart, AccessibilitySettings, VoiceDock, SpeakButton
+│   │   ├── vision/         ColorPlate (prancha do teste), VisionModePicker/PaletteSample
+│   │   ├── speech/         spokenText (o que o guia por voz fala em cada tela)
 │   │   ├── routes/         RouteCard, SegmentDetail, PlaceInput
 │   │   └── reports/        ReportVoteCard, NewReportForm, ContributeForm, LocationPicker…
 │   ├── pages/              uma página por tela do protótipo
@@ -365,7 +374,7 @@ Depois, cada relato ativo soma (facilidade) ou subtrai (obstáculo) seus pontos 
 npm test
 ```
 
-57 testes com `node:test` cobrem: senhas e tokens (resumo, senha errada, token adulterado ou vencido), login, criação de conta e definição de senha de contas antigas, permissões da API (sem token, com token de outra pessoa, coleção de senhas escondida), sessão (entrar, sair, token, modo visitante, contas do aparelho, armazenamento bloqueado), comparação de nomes, validade e níveis do índice de segurança, separação entre segurança e acessibilidade, preferência de evitar alertas, relatos ligados a rotas pela localização, relatos só com localização na API, conversão dos lugares do Photon (incluindo endereços sem nome), conversão das rotas do roteador em trechos, trechos sem levantamento, gravação e cascata de rotas, ciclo de status dos relatos, desatualização, peso dos relatos, bloqueio por perfil, preferência por rotas planas, impacto de um relato na nota, ranqueamento com os dados de demonstração, rota no sentido inverso, CRUD/validação/cascata da API, leitura de rotas da Vercel Function, armazenamento no Blob (com um Blob simulado), enquadramento do mapa e localização do trecho mais próximo.
+68 testes com `node:test` cobrem: pranchas do teste de cores (o número some na simulação do tipo testado e aparece na visão típica; bolinhas sem sobreposição), resultado do teste com "pessoas simuladas" (protan, deutan, tritan, daltonismo parcial, controle errado), paletas (níveis distintos em cada simulação e contraste com o fundo), voz (português, velocidade, fila antes do primeiro toque, navegador sem voz), textos falados das rotas, senhas e tokens (resumo, senha errada, token adulterado ou vencido), login, criação de conta e definição de senha de contas antigas, permissões da API (sem token, com token de outra pessoa, coleção de senhas escondida), sessão (entrar, sair, token, modo visitante, contas do aparelho, armazenamento bloqueado), comparação de nomes, validade e níveis do índice de segurança, separação entre segurança e acessibilidade, preferência de evitar alertas, relatos ligados a rotas pela localização, relatos só com localização na API, conversão dos lugares do Photon (incluindo endereços sem nome), conversão das rotas do roteador em trechos, trechos sem levantamento, gravação e cascata de rotas, ciclo de status dos relatos, desatualização, peso dos relatos, bloqueio por perfil, preferência por rotas planas, impacto de um relato na nota, ranqueamento com os dados de demonstração, rota no sentido inverso, CRUD/validação/cascata da API, leitura de rotas da Vercel Function, armazenamento no Blob (com um Blob simulado), enquadramento do mapa e localização do trecho mais próximo.
 
 ---
 
@@ -377,9 +386,64 @@ npm test
 - Cor nunca é a única informação: status sempre vem escrito (ex.: "Em confirmação"), e trechos não verificados são tracejados.
 - Modo escuro com contraste ajustado; respeita `prefers-reduced-motion`.
 
+### Guia por voz
+
+Usa a síntese de voz do próprio navegador (Web Speech API): não precisa de internet nem de chave, e usa as vozes em português do aparelho.
+
+| Como | O que faz |
+|---|---|
+| **Ouvir o app** (entrada, primeiro acesso, Perfil → Acessibilidade) ou **Alt+V** | Liga ou desliga o guia. A escolha fica salva no aparelho |
+| Ao abrir cada tela | Lê um resumo: o que é a tela, o principal (ex.: "3 rotas encontradas… Rota 1, recomendada, nota 90…") e o que dá para fazer |
+| Tab / Shift+Tab | Lê o item em foco: nome, tipo e estado ("Evitar escadas, interruptor, ligado") |
+| Setas nas sugestões de lugar | Lê a sugestão marcada |
+| Navegação passo a passo | Lê a instrução de cada trecho, com obstáculos, inclinação e alertas de segurança |
+| **Alt+L** ou botão flutuante 🔊 | Lê a tela de novo; **Esc** ou ⏹ para a fala |
+| Avisos (toasts) | São falados depois do que estiver sendo lido |
+| Botões **Ouvir** | Leem uma rota, um trecho ou a instrução atual, mesmo com o guia desligado |
+| 🎤 nos campos de lugar | Ditado: a pessoa fala o nome do lugar e ouve as sugestões (Chrome, Edge e Safari) |
+
+Na primeira vez que alguém aperta Tab no aparelho, o app diz uma única vez: "Para ouvir o app em voz alta, aperte Alt mais V". Quem já usa leitor de tela (TalkBack, VoiceOver, NVDA) não precisa do guia: o app tem rótulos, papéis e regiões vivas para isso, e o próprio Perfil avisa para não usar as duas vozes juntas.
+
+Os textos falados ficam em `components/speech/spokenText.js`: unidades por extenso ("1,2 quilômetros", "8 por cento"), sem símbolos de tela ("·", "%").
+
+### Teste de cores e paletas para daltonismo
+
+**O teste** (`domain/colorVision.js`, tela `pages/ColorTestPage.jsx`) tem 10 círculos de bolinhas: 1 de controle, que todos veem, e, para cada tipo (protan, deutan e tritan), 1 forte e 2 sutis. Os números e a ordem são sorteados a cada vez.
+
+- As pranchas são geradas no código, não copiadas de um livro. A cor do número e a do fundo diferem só na direção que aquele tipo de daltonismo não enxerga, a "linha de confusão" tirada do próprio modelo de simulação. Para protan e deutan, o modelo é o de Machado, Oliveira e Fernandes (2009). Para tritan, é a projeção nos cones de Viénot e Brettel.
+- O brilho de cada bolinha varia ao acaso, para que o número não apareça por claro/escuro.
+- Para a pessoa com aquele tipo, o número some (ΔE < 2 na simulação). Na visão típica, ele aparece (ΔE > 40 nas fortes e > 10 nas sutis). Os testes conferem isso e fazem "pessoas simuladas" responderem ao teste.
+
+**O resultado**:
+
+- Errar a prancha forte, ou as duas sutis do mesmo tipo, indica aquele tipo. Errar só as sutis indica daltonismo leve.
+- Errar todas as coloridas leva ao modo "sem cores".
+- Um erro isolado não muda nada.
+- Se a prancha de controle for errada, o teste não conclui.
+- A tela mostra o antes e o depois e deixa a pessoa decidir. Quem já sabe o tipo pode escolher direto.
+
+**As paletas** (`domain/visionPalettes.js`) foram escolhidas por cálculo: os três níveis (boa, com limitações, dificuldade alta) ficam a mais de 30 ΔE entre si na simulação do tipo. Os textos de status mantêm contraste de pelo menos 4,4:1.
+
+| Modo | Boa | Com limitações | Dificuldade alta |
+|---|---|---|---|
+| Padrão | verde | laranja | vermelho |
+| Vermelho-verde (protan/deutan) | azul | laranja | vinho |
+| Azul-amarelo (tritan) | verde-azulado | laranja | vermelho |
+| Sem cores | escuro | cinza | preto |
+
+- Fora do padrão, as linhas do mapa também mudam de traço: contínua, tracejada e pontilhada.
+- O destino vira um quadrado no mapa.
+- A paleta vale no tema claro e no escuro, e fica salva no aparelho.
+
+Por que trocar: na paleta padrão, verde e vermelho ficam a menos de 15 ΔE na protanopia (o teste `colorVision.test.js` registra isso). Na prática, são a mesma cor para essa pessoa.
+
 ---
 
 ## Limitações e próximos passos
+
+- O teste de cores é uma triagem, não um diagnóstico: a calibração da tela, o brilho e filtros de luz azul interferem. A tela avisa isso e sugere procurar um oftalmologista.
+- O guia por voz depende das vozes instaladas no aparelho; sem voz em português, o navegador usa a voz padrão. O ditado por voz não existe no Firefox (o botão do microfone não aparece).
+- O guia por voz não substitui um leitor de tela completo (não lê tabelas nem navega por títulos). Para uso diário, o leitor de tela do celular continua sendo o melhor caminho.
 
 - Não há recuperação de senha (o app não pede e-mail). Quem esquecer a senha precisa criar outra conta.
 - O token fica no `localStorage` e não pode ser revogado antes de vencer (30 dias). Para usuários reais, o ideal seria um cookie `HttpOnly` e sessões guardadas no servidor.

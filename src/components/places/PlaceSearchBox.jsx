@@ -1,9 +1,11 @@
-import { useId, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { Icon } from '../ui/Icon.jsx';
 import { Spinner } from '../ui/Button.jsx';
 import { inputClass } from '../ui/Field.jsx';
 import { useAddressAutocomplete } from '../../hooks/useAddressAutocomplete.js';
 import { cn } from '../../utils/cn.js';
+import { useSpeechRecognition } from '../../hooks/useSpeechRecognition.js';
+import { useAccessibility } from '../../context/AccessibilityContext.jsx';
 
 const MIN_LENGTH = 3;
 const MAX_LOCAL = 4;
@@ -24,6 +26,18 @@ export function PlaceSearchBox({ label, placeholder, displayValue = '', onSelect
   const [text, setText] = useState(null); // null = mostrando displayValue
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(0);
+  const inputRef = useRef(null);
+  const { speak } = useAccessibility();
+  const dictated = useRef(false);
+  const dictation = useSpeechRecognition({
+    onText: (spoken) => {
+      dictated.current = true;
+      setText(spoken);
+      setOpen(true);
+      setActive(0);
+      inputRef.current?.focus({ preventScroll: true });
+    },
+  });
 
   const typing = text !== null;
   const term = (text ?? '').trim();
@@ -39,6 +53,26 @@ export function PlaceSearchBox({ label, placeholder, displayValue = '', onSelect
   const options = [...local, ...remote];
   const activeIndex = Math.min(active, Math.max(options.length - 1, 0));
 
+  // guia por voz: diz quantas sugestões apareceram depois do ditado e lê a sugestão marcada pelas setas
+  const firstName = options[0]?.place.name;
+  useEffect(() => {
+    if (!dictated.current || suggestions.loading || !typing) return;
+    dictated.current = false;
+    speak(
+      options.length
+        ? `${options.length === 1 ? '1 sugestão' : `${options.length} sugestões`} para ${term}. Primeira: ${firstName}. Use as setas para ouvir as outras e Enter para escolher.`
+        : `Nenhum lugar encontrado para ${term}.`,
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [suggestions.loading, firstName]);
+
+  const activeName = open && options[activeIndex] ? `${options[activeIndex].place.name}, ${options[activeIndex].remote ? options[activeIndex].place.label : (options[activeIndex].place.neighborhood ?? '')}` : null;
+  const moved = useRef(false);
+  useEffect(() => {
+    if (moved.current && activeName) speak(activeName);
+    moved.current = false;
+  }, [activeName, speak]);
+
   const choose = (place) => {
     onSelect(place);
     setText(null);
@@ -46,6 +80,7 @@ export function PlaceSearchBox({ label, placeholder, displayValue = '', onSelect
   };
 
   const onKeyDown = (e) => {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') moved.current = true;
     if (e.key === 'ArrowDown') {
       e.preventDefault();
       setOpen(true);
@@ -82,7 +117,8 @@ export function PlaceSearchBox({ label, placeholder, displayValue = '', onSelect
         </span>
         <input
           id={id}
-          className={cn(inputClass, 'pl-[38px]')}
+          ref={inputRef}
+          className={cn(inputClass, 'pl-[38px]', dictation.supported && 'pr-12')}
           role="combobox"
           aria-expanded={showList}
           aria-controls={`${id}-list`}
@@ -109,7 +145,27 @@ export function PlaceSearchBox({ label, placeholder, displayValue = '', onSelect
           }}
           onKeyDown={onKeyDown}
         />
+        {dictation.supported && (
+          <button
+            type="button"
+            className={cn(
+              'absolute top-1/2 right-1 grid size-10 -translate-y-1/2 cursor-pointer place-items-center rounded-md',
+              dictation.listening ? 'bg-bad-soft text-bad' : 'text-ink-soft hover:text-brand',
+            )}
+            aria-label={dictation.listening ? `Ouvindo… toque para parar (${label ?? 'lugar'})` : `Falar o nome do lugar (${label ?? 'lugar'})`}
+            aria-pressed={dictation.listening}
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => (dictation.listening ? dictation.stop() : dictation.start())}
+          >
+            <Icon name="mic" size={18} />
+          </button>
+        )}
       </div>
+      {dictation.error && (
+        <p className="m-0 text-xs text-bad" role="alert">
+          {dictation.error}
+        </p>
+      )}
 
       {showList && (
         <div className="absolute top-full right-0 left-0 z-30 mt-1 rounded-lg border border-line bg-surface p-1 shadow-soft">

@@ -9,6 +9,8 @@ import { ThemeToggleButton } from '../components/ui/ThemeToggle.jsx';
 import { useCurrentUser } from '../context/UserContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import { MIN_PASSWORD_LENGTH } from '../../shared/auth.js';
+import { AccessibilityQuickStart } from '../components/accessibility/AccessibilityControls.jsx';
+import { useScreenAnnouncement } from '../context/AccessibilityContext.jsx';
 
 const MODES = [
   { id: 'login', label: 'Entrar' },
@@ -36,6 +38,11 @@ export function LoginPage({ navigate }) {
 
   const copy = TITLES[mode];
   const choosing = mode !== 'claim';
+  useScreenAnnouncement(
+    mode === 'claim'
+      ? `Definir senha. ${copy.text}`
+      : `AcessaRio, navegação urbana inclusiva. Tela de ${copy.title.toLowerCase()}. ${copy.text} Também dá para entrar sem conta, no fim da tela.`,
+  );
 
   const changeMode = (next) => {
     setMode(next);
@@ -96,6 +103,8 @@ export function LoginPage({ navigate }) {
         </p>
         <p className="m-0 text-sm opacity-85">Navegação urbana inclusiva</p>
       </header>
+
+      <AccessibilityQuickStart />
 
       {choosing && <Tabs tabs={MODES} value={mode} onChange={changeMode} label="Entrar ou criar conta" />}
 

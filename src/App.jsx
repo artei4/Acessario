@@ -12,6 +12,8 @@ import { RouteSummaryPage } from './pages/RouteSummaryPage.jsx';
 import { ReportPage } from './pages/ReportPage.jsx';
 import { ProfilePage } from './pages/ProfilePage.jsx';
 import { LoginPage } from './pages/LoginPage.jsx';
+import { ColorTestPage } from './pages/ColorTestPage.jsx';
+import { useAccessibility } from './context/AccessibilityContext.jsx';
 import { config } from './config/env.js';
 
 /** Tabela de rotas: padrão → página e item ativo da barra inferior. */
@@ -35,6 +37,7 @@ function resolve(path) {
 export function App() {
   const { user, signedIn, loading, error, reload } = useCurrentUser();
   const { path, query, navigate, back } = useHashRouter();
+  const { colorTestOpen } = useAccessibility();
   const match = resolve(path);
   const needsOnboarding = user && !user.profile;
 
@@ -43,6 +46,15 @@ export function App() {
     if (needsOnboarding && path !== '/boas-vindas') navigate('/boas-vindas', undefined, { replace: true });
     else if (!match) navigate('/buscar', undefined, { replace: true });
   }, [user, needsOnboarding, path, match, navigate]);
+
+  // teste de cores: abre por cima de qualquer tela, com ou sem conta
+  if (colorTestOpen) {
+    return (
+      <AppShell>
+        <ColorTestPage />
+      </AppShell>
+    );
+  }
 
   // sem conta ativa: tela de entrada, qualquer que seja o endereço
   if (!signedIn) {

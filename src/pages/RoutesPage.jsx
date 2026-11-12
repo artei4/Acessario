@@ -12,16 +12,20 @@ import { useRouteOptions } from '../hooks/useRouteOptions.js';
 import { useRecentSearches } from '../hooks/useRecentSearches.js';
 import { usePlaces } from '../hooks/usePlaces.js';
 import { getProfile } from '../domain/profiles.js';
+import { speakRoutesScreen } from '../components/speech/spokenText.js';
+import { useScreenAnnouncement } from '../context/AccessibilityContext.jsx';
+import { sessionStore } from '../services/sessionStore.js';
 
 /** Tela 3 — Rotas e mapa de acessibilidade. */
 export function RoutesPage({ query, navigate, back }) {
-  const { user } = useCurrentUser();
+  const { user, isGuest } = useCurrentUser();
   const { searches, loading: loadingSearches } = useRecentSearches(user.id);
   const { byId } = usePlaces();
 
-  // sem trajeto na URL, usa a última busca
-  const originId = query.de ?? searches[0]?.originId;
-  const destinationId = query.para ?? searches[0]?.destinationId;
+  // sem trajeto na URL, usa a última busca (do visitante, guardada só no aparelho)
+  const lastTrip = isGuest ? sessionStore.guestData().lastTrip : searches[0];
+  const originId = query.de ?? lastTrip?.originId;
+  const destinationId = query.para ?? lastTrip?.destinationId;
   // plan: sem rota salva entre os dois lugares, calcula rotas a pé pelo OpenStreetMap e grava na API
   const { evaluations, loading, error, reload } = useRouteOptions(originId, destinationId, { plan: true });
   const [selectedId, setSelectedId] = useState(null);
@@ -42,6 +46,10 @@ export function RoutesPage({ query, navigate, back }) {
         }),
       ),
     [evaluations, selectedId],
+  );
+
+  useScreenAnnouncement(
+    originId ? speakRoutesScreen({ evaluations, origin: byId.get(originId), destination: byId.get(destinationId), loading }) : 'Nenhum trajeto escolhido. Volte para a busca.',
   );
 
   const open = (evaluation) =>

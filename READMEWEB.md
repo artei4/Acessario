@@ -79,7 +79,7 @@ tela (pages) → componentes (components) → hooks → services → api (client
   - `signIn` — guarda quem entrou e o token.
   - `signOut` — sai e apaga o token.
   - `enterAsGuest` — entra como visitante.
-  - `guestData` / `saveGuestData` — leem e salvam o perfil e as preferências do visitante.
+  - `guestData` / `saveGuestData` — leem e salvam o perfil, as preferências e o último trajeto do visitante.
   - `knownAccounts` — lista as contas já usadas neste aparelho.
   - `rename` — atualiza o nome guardado de uma conta.
   - `forget` — tira uma conta da lista.
@@ -90,6 +90,7 @@ tela (pages) → componentes (components) → hooks → services → api (client
 - `searchesService` — salva e apaga as buscas recentes.
 - `geocodingService` — busca endereços enquanto a pessoa digita e transforma um ponto do mapa em endereço (API Photon). Usa `placeName` (monta um nome legível) e `fromPhotonFeature` (converte a resposta da Photon para o formato do app).
 - `routingService` — pede à OSRM o caminho a pé entre dois pontos.
+- `speech` — voz do app (síntese de fala do navegador): `speak` fala um texto, `stop` para, e `setRate` muda a velocidade. Antes do primeiro toque na página, guarda o texto e fala depois. `createSpeech` cria o mesmo serviço com um motor de voz falso, para os testes.
 - `networkService` / `loadNetwork` — junta trechos e relatos próximos (inclusive os feitos "em qualquer lugar") para avaliar uma rota.
 
 ---
@@ -122,6 +123,23 @@ tela (pages) → componentes (components) → hooks → services → api (client
 - `pathMidpoint` — ponto do meio de um caminho.
 - `attachReportsToSegments` — liga relatos feitos por localização aos trechos próximos.
 
+### `colorVision.js` (teste de daltonismo)
+- `simulate(cor, tipo, gravidade)` — mostra como uma cor aparece para quem tem protanopia, deuteranopia ou tritanopia.
+- `confusionAxis(tipo)` — direção de cor que aquele tipo não enxerga, usada para montar as pranchas.
+- `plateLayout(número, semente)` — espalha as bolinhas de uma prancha sem sobrepor e marca as que formam o número.
+- `plateColors(tipo, intensidade)` — cores do número e do fundo, que só aquele tipo de daltonismo confunde.
+- `paintPlate(bolinhas, cores, semente)` — pinta as bolinhas e varia o brilho ao acaso.
+- `buildTest(semente)` — monta o teste: 10 pranchas sorteadas, com 4 opções de resposta cada.
+- `classifyVision(pranchas, respostas)` — lê as respostas e devolve o tipo, a gravidade, a paleta indicada e um texto explicando.
+- `deltaE`, `contrastRatio`, `luminance` — medem a diferença entre cores e o contraste (usados para escolher as paletas).
+- `VISION_MODES` — os modos de cor (padrão, vermelho-verde, azul-amarelo, sem cores).
+
+### `visionPalettes.js` (cores para cada tipo)
+- `VISION_PALETTES` — as cores de cada modo, no tema claro e no escuro.
+- `levelColors(modo, tema)` — cores dos níveis de acessibilidade no mapa.
+- `levelDash(modo, nível)` — padrão de traço da linha: contínua, tracejada ou pontilhada.
+- `paletteCss(modo)` — gera o CSS que troca as cores do site inteiro.
+
 ### Outros arquivos de `domain/`
 - `routePlanning.js`
   - `planFromOsrm` — transforma a resposta da OSRM em rota e trechos.
@@ -152,6 +170,8 @@ tela (pages) → componentes (components) → hooks → services → api (client
 - `useGeocoding` — busca de endereço sob demanda.
 - `usePhotoPicker` — escolher e reduzir a foto do relato.
 - `useLeafletMap` — cria o mapa OpenStreetMap. `useMapEvent` liga eventos (clique), e `useLayerGroup` desenha camadas.
+- `useColorTest` — andamento do teste de cores: prancha atual, responder, voltar uma, refazer e o resultado no final.
+- `useSpeechRecognition` — ditado por voz: a pessoa fala e o texto vira a busca do lugar.
 - `useEvaluationContext` — perfil e preferências do usuário no formato que as regras de negócio esperam.
 
 ---
@@ -166,6 +186,14 @@ tela (pages) → componentes (components) → hooks → services → api (client
   - `signOut` — sair.
   - `updateUser` / `setPreference` — salvar mudanças. Para o visitante, salvam só no aparelho.
   - `isGuest` — diz se é visitante.
+- `AccessibilityProvider` / `useAccessibility` — ajustes de acessibilidade do aparelho:
+  - `vision` / `setVision` / `saveVisionResult` — a paleta de cores e o resultado do teste.
+  - `openColorTest` — abre o teste de cores.
+  - `voice` / `setVoice` — liga ou desliga o guia por voz.
+  - `speak` / `speakAlways` / `stop` — falar (só com o guia ligado, ou sempre) e parar.
+  - `readScreen` — lê a tela de novo.
+  - Também lê o item em foco e cuida dos atalhos Alt+V, Alt+L e Esc.
+- `useScreenAnnouncement(texto)` — cada tela informa o próprio resumo, e o guia lê quando ele muda.
 - `ThemeProvider` / `useTheme` — modo claro, escuro ou automático.
 - `ToastProvider` / `useToast` — mensagens rápidas no rodapé ("Relato enviado!").
 
@@ -179,7 +207,8 @@ tela (pages) → componentes (components) → hooks → services → api (client
 - `RoutesPage` — tela 2: rotas encontradas, com nota e mapa.
 - `RouteSummaryPage` — telas 3 e 4: resumo da rota e detalhes de cada trecho.
 - `ReportPage` — telas 5A e 5B: confirmar um relato ou relatar um problema novo.
-- `ProfilePage` — tela 6: perfil, preferências, aparência, rotas recentes, meus relatos, contribuir e sair.
+- `ProfilePage` — tela 6: perfil, preferências, aparência, acessibilidade, rotas recentes, meus relatos, contribuir e sair.
+- `ColorTestPage` — teste de cores: explicação, as 10 pranchas e o resultado (com antes e depois). Também tem a escolha manual. Abre por cima de qualquer tela, até antes de entrar na conta.
 - `App` (`src/App.jsx`) — escolhe a tela conforme a URL e a sessão. Sem sessão mostra a entrada, e sem perfil mostra o onboarding.
 
 ---
@@ -244,6 +273,26 @@ tela (pages) → componentes (components) → hooks → services → api (client
 - `PhotoThumb` — miniatura da foto.
 - `reportText.js` — textos prontos: `tallyText` (contagem de votos) e `reportMeta` (data e autor).
 
+### `accessibility/` (acessibilidade)
+- `AccessibilityQuickStart` — botões "Ouvir o app" e "Tenho daltonismo" na entrada e no primeiro acesso.
+- `AccessibilitySettings` — seção Acessibilidade do Perfil: guia por voz, velocidade e cores.
+- `VoiceDock` — botões flutuantes enquanto a voz está ligada: ouvir a tela de novo e parar.
+- `SpeakButton` — botão "Ouvir", que lê um texto mesmo com o guia desligado.
+
+### `vision/` (cores)
+- `ColorPlate` — desenha uma prancha do teste (círculo de bolinhas).
+- `VisionModePicker` — escolha manual da paleta.
+- `PaletteSample` — amostra das cores de uma paleta.
+
+### `speech/` (voz)
+- `spokenText.js` — o que o guia fala:
+  - `speakRoutesScreen` — a lista de rotas.
+  - `speakRoute` — uma rota.
+  - `speakRouteSummary` — o resumo da rota.
+  - `speakSegment` — um trecho.
+  - `speakNavigationStep` — cada passo da navegação.
+  - As unidades vêm por extenso: "quilômetros", "por cento".
+
 ### `places/`
 - `PlaceSearchBox` — caixa de busca de endereço com sugestões.
 
@@ -264,10 +313,11 @@ tela (pages) → componentes (components) → hooks → services → api (client
   - `signed` — número com sinal (+5).
   - `plural` — "1 relato" / "2 relatos".
 - `resizeImageFile(arquivo)` — reduz a foto antes de enviar.
+- `describeElement(elemento)` — descreve em palavras o item em foco, para o guia por voz ("Buscar rotas, botão"). Usa `accessibleName` (o nome do item) e `roleOf` (o tipo).
 - `src/config/env.js` → `config` — lê a configuração (modo da API, endereço do servidor, tipo de mapa).
 
 ---
 
 ## 11. `tests/` — testes automáticos
 
-Rodam com `npm test`. Testam as regras de `domain/`, a API REST, o login com senha e as permissões, a sessão do aparelho e o servidor.
+Rodam com `npm test`. Testam as regras de `domain/`, a API REST, o login com senha e as permissões, a sessão do aparelho e o servidor. Também testam o teste de cores (com "pessoas simuladas" de cada tipo de daltonismo), as paletas, o serviço de voz e os textos falados.

@@ -43,7 +43,9 @@ test('modo visitante: sem token, com perfil e preferências só no aparelho', ()
   assert.equal(session.token(), null);
   assert.deepEqual(session.guestData(), {});
   session.saveGuestData({ profile: 'idoso', preferences: { avoidStairs: true } });
-  assert.equal(session.guestData().profile, 'idoso');
+  session.saveGuestData({ lastTrip: { originId: 'a', destinationId: 'b' } });
+  assert.equal(session.guestData().profile, 'idoso', 'salvar o último trajeto não apaga o perfil');
+  assert.equal(session.guestData().lastTrip.destinationId, 'b');
 });
 
 test('renomear e esquecer contas', () => {

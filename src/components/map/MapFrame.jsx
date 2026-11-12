@@ -1,10 +1,13 @@
 import { cn } from '../../utils/cn.js';
+import { useAccessibility } from '../../context/AccessibilityContext.jsx';
+import { levelDash } from '../../domain/visionPalettes.js';
 
+/** Cores dos níveis como variáveis CSS: mudam sozinhas com a paleta de daltonismo. */
 export const LEVEL_COLORS = {
-  good: '#15803d',
-  limited: '#d97706',
-  bad: '#dc2626',
-  unknown: '#94a3b8',
+  good: 'var(--level-good)',
+  limited: 'var(--level-limited)',
+  bad: 'var(--level-bad)',
+  unknown: 'var(--level-unknown)',
 };
 
 export const LEVEL_LABELS = {
@@ -41,7 +44,19 @@ export function LegendDot({ level, className }) {
   return <span className={cn('inline-block size-[9px] flex-none rounded-full', className)} style={{ background: LEVEL_COLORS[level] }} aria-hidden="true" />;
 }
 
+/** Amostra da linha do mapa (cor + padrão de traço) usada na legenda. */
+function LegendLine({ level }) {
+  const { vision, levelColors } = useAccessibility();
+  const dash = levelDash(vision, level);
+  return (
+    <svg width="18" height="8" viewBox="0 0 18 8" className="flex-none" aria-hidden="true">
+      <line x1="2" y1="4" x2="16" y2="4" stroke={levelColors[level]} strokeWidth="3.5" strokeLinecap="round" strokeDasharray={dash ? dash.map((d) => d * 3.5).join(' ') : undefined} />
+    </svg>
+  );
+}
+
 function MapLegend({ position }) {
+  const { vision } = useAccessibility();
   return (
     <div
       aria-hidden="true"
@@ -52,7 +67,7 @@ function MapLegend({ position }) {
     >
       {Object.entries(LEVEL_LABELS).map(([level, text]) => (
         <span key={level} className="flex items-center gap-1.5">
-          <LegendDot level={level} />
+          {vision === 'none' ? <LegendDot level={level} /> : <LegendLine level={level} />}
           {text}
         </span>
       ))}

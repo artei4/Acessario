@@ -2,7 +2,9 @@ import { useEffect, useMemo, useRef } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useLayerGroup, useLeafletMap, useMapEvent } from '../../hooks/useLeafletMap.js';
-import { LEVEL_COLORS, MapFrame } from './MapFrame.jsx';
+import { MapFrame } from './MapFrame.jsx';
+import { useAccessibility } from '../../context/AccessibilityContext.jsx';
+import { levelDash } from '../../domain/visionPalettes.js';
 import { framePoints, fromLatLng, labelPoint, pointsKey } from './mapGeometry.js';
 
 const STROKE = { selected: 7, normal: 5, muted: 4 };
@@ -46,6 +48,8 @@ export function LeafletRouteMap({
   children,
 }) {
   const containerRef = useRef(null);
+  // o Leaflet desenha em SVG com atributos, que não leem variáveis CSS: as cores vêm já resolvidas
+  const { vision, levelColors } = useAccessibility();
   // no modo de escolha de ponto, as setas movem o alfinete (e não o mapa)
   const map = useLeafletMap(containerRef, { keyboard: !onPick, scrollWheelZoom: Boolean(onPick) });
   const routeLayer = useLayerGroup(map);
@@ -92,10 +96,11 @@ export function LeafletRouteMap({
           L.polyline(segment.path, { color: '#1a56db', opacity: 0.35, weight: weight + 8, interactive: false }).addTo(routeLayer);
         }
         const line = L.polyline(segment.path, {
-          color: LEVEL_COLORS[segment.level],
+          color: levelColors[segment.level],
           weight,
           opacity: OPACITY[emphasis],
-          dashArray: segment.level === 'unknown' ? `${weight * 1.5} ${weight * 1.5}` : undefined,
+          // fora das cores padrão, o nível também aparece no traço (contínuo, tracejado ou pontilhado)
+          dashArray: levelDash(vision, segment.level)?.map((d) => d * weight).join(' '),
           lineCap: 'round',
           interactive: Boolean(onSelectRoute || onPick),
         }).addTo(routeLayer);
@@ -104,7 +109,7 @@ export function LeafletRouteMap({
         if (onPick) line.on('click', (event) => onPick(fromLatLng(event.latlng)));
       }
     }
-  }, [routeLayer, routes, highlightSegmentId, onSelectRoute, onPick]);
+  }, [routeLayer, routes, highlightSegmentId, onSelectRoute, onPick, vision, levelColors]);
 
   // Marcadores: origem/destino, números dos trechos, rótulos das rotas e o alfinete do relato
   useEffect(() => {

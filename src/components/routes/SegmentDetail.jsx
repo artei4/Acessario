@@ -8,6 +8,8 @@ import { getReportType, isAccessibilityReport } from '../../domain/reportTypes.j
 import { SafetySection } from '../safety/SafetySection.jsx';
 import { cn } from '../../utils/cn.js';
 import { formatMeters, formatRelativeDays, formatShortDate, formatWidth, signed } from '../../utils/format.js';
+import { SpeakButton } from '../accessibility/AccessibilityControls.jsx';
+import { speakSegment } from '../speech/spokenText.js';
 
 function PhotoStrip({ reports }) {
   const items = reports.slice(0, 3);
@@ -56,7 +58,10 @@ export function SegmentDetail({ evaluation, routeName, onReport }) {
         <h2 id={`seg-${segment.id}`} className="text-[15px] font-bold">
           {routeName} · {code} · {formatMeters(segment.lengthM)}
         </h2>
-        {blocked ? <Badge tone="danger">Impedido</Badge> : level !== 'good' ? <Badge tone="warning">Atenção</Badge> : <Badge tone="success">Bom</Badge>}
+        <div className="flex items-center gap-1">
+          <SpeakButton text={speakSegment(evaluation)} label={`Ouvir o trecho ${code}`} />
+          {blocked ? <Badge tone="danger">Impedido</Badge> : level !== 'good' ? <Badge tone="warning">Atenção</Badge> : <Badge tone="success">Bom</Badge>}
+        </div>
       </div>
       <p className="-mt-2 mb-0 text-[13px] text-ink-soft">{segment.street}</p>
 

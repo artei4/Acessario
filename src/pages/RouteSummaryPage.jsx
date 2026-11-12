@@ -15,6 +15,9 @@ import { segmentLevel } from '../domain/summary.js';
 import { getReportType } from '../domain/reportTypes.js';
 import { cn } from '../utils/cn.js';
 import { formatKm, formatMeters } from '../utils/format.js';
+import { SpeakButton } from '../components/accessibility/AccessibilityControls.jsx';
+import { speakNavigationStep, speakRouteSummary } from '../components/speech/spokenText.js';
+import { useScreenAnnouncement } from '../context/AccessibilityContext.jsx';
 
 function NavigationPanel({ evaluation, step, onStep, onStop }) {
   const current = evaluation.segments[step];
@@ -24,11 +27,14 @@ function NavigationPanel({ evaluation, step, onStep, onStop }) {
   const risks = current.safety.risks;
   return (
     <section className="flex flex-col gap-2.5 rounded-xl bg-navy p-3.5 text-on-navy" aria-live="polite" aria-label="Navegação">
-      <div className="flex justify-between gap-2 text-[13px]">
+      <div className="flex items-center justify-between gap-2 text-[13px]">
         <span>
           Trecho {step + 1} de {evaluation.segments.length}
         </span>
-        <span>Faltam {formatMeters(remaining)}</span>
+        <span className="flex items-center gap-1">
+          Faltam {formatMeters(remaining)}
+          <SpeakButton onDark text={speakNavigationStep(evaluation, step)} label="Ouvir a instrução deste trecho" className="ml-1" />
+        </span>
       </div>
       <p className="m-0 text-lg font-bold">
         Siga pela {current.segment.street} por {formatMeters(current.segment.lengthM)}
@@ -57,6 +63,11 @@ export function RouteSummaryPage({ routeId, query, navigate, back }) {
   const [navStep, setNavStep] = useState(null);
   const [showSafety, setShowSafety] = useState(true);
   const stepsRef = useRef(null);
+
+  // guia por voz: o resumo ao abrir a rota; durante a navegação, a instrução de cada trecho
+  useScreenAnnouncement(
+    !evaluation ? (loading ? 'Carregando a rota.' : '') : navStep === null ? speakRouteSummary(evaluation) : speakNavigationStep(evaluation, navStep),
+  );
 
   // sem trecho escolhido, abre no trecho com a pior nota (onde está a atenção)
   const worst = evaluation?.segments.reduce((min, s) => (s.score < min.score ? s : min), evaluation.segments[0]);
@@ -128,7 +139,10 @@ export function RouteSummaryPage({ routeId, query, navigate, back }) {
             {evaluation.sufficient ? `${evaluation.score}/100` : 'Sem nota'} · {evaluation.route.name} · via {evaluation.route.via}
           </p>
         </div>
-        <Badge tone={reliabilityTone}>Confiabilidade {evaluation.reliability}</Badge>
+        <div className="flex items-center gap-1">
+          <SpeakButton text={speakRouteSummary(evaluation)} label="Ouvir o resumo da rota" />
+          <Badge tone={reliabilityTone}>Confiabilidade {evaluation.reliability}</Badge>
+        </div>
       </div>
 
       {navStep === null ? (

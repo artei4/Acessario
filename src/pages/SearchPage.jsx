@@ -13,6 +13,8 @@ import { useToast } from '../context/ToastContext.jsx';
 import { usePlaces } from '../hooks/usePlaces.js';
 import { useRecentSearches } from '../hooks/useRecentSearches.js';
 import { useRouteOptions } from '../hooks/useRouteOptions.js';
+import { useScreenAnnouncement } from '../context/AccessibilityContext.jsx';
+import { sessionStore } from '../services/sessionStore.js';
 
 const s = (n) => (n === 1 ? '' : 's');
 
@@ -58,6 +60,10 @@ export function SearchPage({ navigate }) {
   const [destination, setDestination] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const { recent, loading, evaluations } = useRouteOptions(origin?.id, destination?.id);
+  useScreenAnnouncement(
+    `Para onde vamos? ${origin ? `Origem: ${origin.name}.` : 'Escolha a origem.'} ${destination ? `Destino: ${destination.name}.` : 'Escolha o destino.'} ` +
+      'Digite o lugar e use as setas para escolher uma sugestão, ou toque no microfone para falar. Depois, toque em Buscar rotas.',
+  );
 
   // começa com o último trajeto buscado
   useEffect(() => {
@@ -86,7 +92,8 @@ export function SearchPage({ navigate }) {
       return toast.show(error.userMessage ?? 'Não foi possível salvar os lugares.', { tone: 'danger' });
     }
     try {
-      if (!isGuest) await record(savedOrigin.id, savedDestination.id);
+      if (isGuest) sessionStore.saveGuestData({ lastTrip: { originId: savedOrigin.id, destinationId: savedDestination.id } });
+      else await record(savedOrigin.id, savedDestination.id);
     } catch {
       // a busca recente é um extra: não impede de ver as rotas
     }

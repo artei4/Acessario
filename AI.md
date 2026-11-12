@@ -137,3 +137,38 @@ Verificação: 57 testes. No navegador, com o servidor local, foram conferidos:
 - Maria criou a conta.
 - POST /reports sem token devolveu 401, e GET /credentials devolveu 404.
 - O visitante calculou rotas, viu os relatos sem os botões de voto, recebeu o convite em Novo problema e no Perfil, e nenhuma busca foi gravada.
+
+Décima primeira rodada: guia por voz e teste de cores para daltonismo
+A pessoa pediu que o site fosse acessível para todos. Pediu áudios para pessoas cegas usarem o site e, para pessoas daltônicas, um teste em vez de uma lista de opções: a pessoa diz que tem daltonismo, faz o teste, e o site muda de acordo com o resultado.
+
+Voz: a IA usou a síntese de voz do próprio navegador (Web Speech API) em vez de gravar arquivos de áudio. Assim a voz lê qualquer conteúdo, inclusive rotas e relatos que mudam o tempo todo, sem custo e sem internet.
+O guia por voz (AccessibilityContext + services/speech.js) lê:
+- o resumo de cada tela;
+- o item em foco quando a pessoa aperta Tab;
+- as sugestões de lugar marcadas pelas setas;
+- os avisos;
+- cada passo da navegação.
+Tem os atalhos Alt+V (ligar/desligar), Alt+L (ler de novo) e Esc (parar), botões "Ouvir" em rotas, trechos e navegação, e ditado por microfone nos campos de lugar.
+Os textos falados ficam em components/speech/spokenText.js, separados das telas.
+Decisão registrada: quem é cego normalmente já usa um leitor de tela no celular. Por isso o guia é opcional, e o Perfil avisa para não usá-lo junto com o leitor de tela. Para quem navega pelo teclado, o app diz uma única vez "aperte Alt mais V" no primeiro Tab.
+
+Teste de cores: em vez de copiar pranchas de Ishihara (que têm direitos autorais e só funcionam impressas), a IA gerou as pranchas no código.
+- A cor do número e a do fundo diferem só na "linha de confusão" de cada tipo, tirada do próprio modelo de simulação (Machado et al. 2009 para protan e deutan; projeção de Viénot/Brettel para tritan). O brilho das bolinhas varia ao acaso.
+- São 10 pranchas: controle, e uma forte e duas sutis de cada tipo. O resultado indica a paleta vermelho-verde, azul-amarelo ou sem cores, além da gravidade, e a tela mostra antes e depois.
+- A pessoa decide se usa as novas cores. Quem já sabe o tipo pode escolher direto.
+As paletas foram escolhidas por cálculo: a IA testou combinações de cores e ficou com as que mantêm os três níveis distintos na simulação e o contraste com o fundo.
+Fora do padrão, as linhas do mapa também ganham padrão de traço (contínua, tracejada, pontilhada), e o destino vira um quadrado. Assim a informação não depende só da cor.
+
+Erros encontrados e corrigidos:
+- A matriz de tritanopia usada no começo não era de dicromacia (determinante diferente de zero), então as pranchas azul-amarelo continuavam visíveis na simulação. A IA trocou pela projeção nos cones, e o número passou a sumir (ΔE 0,9).
+- O teste com "pessoa simulada" falhou para o daltonismo parcial. Em vez de só ajustar o número, a IA mediu o ruído de brilho das próprias pranchas (ΔE 10,5) e usou esse valor como limite de percepção do observador simulado.
+- Vendo as pranchas renderizadas, a IA notou que a prancha sutil de azul-amarelo ficava quase invisível também na visão típica. O olho percebe pior essa diferença em pontos pequenos, então essa prancha ficou mais forte que as outras sutis. O traço dos números ficou mais fino para o 6 e o 5 não virarem manchas.
+- O teste de texto falado pegou frases que soavam mal em voz alta ("no trecho Trecho 01", "8%", "Em confirmação · 3"). Os problemas da rota passaram a ter um texto próprio para a voz.
+- Os botões flutuantes da voz cobriam botões no fim das telas, e os avisos cobriam os botões da voz. As telas passaram a reservar espaço.
+- O visitante perdia o trajeto ao tocar em "Rotas" na barra inferior. O último trajeto do visitante agora fica salvo no aparelho.
+
+Verificação: 68 testes. No navegador, com o servidor local e a voz interceptada:
+- a dica no primeiro Tab, o guia ligado e a leitura do foco ("Entrar, aba, selecionada");
+- os resumos falados das telas de rotas, de resumo e de navegação, e o Alt+L;
+- o teste completo respondido como uma pessoa com deuteranopia, que recebeu a paleta vermelho-verde, aplicada no tema claro e no escuro;
+- capturas da tela passadas por um filtro que simula deuteranopia. Na paleta padrão, o trecho vermelho fica igual aos verdes; na nova, ele é pontilhado e se distingue do azul.

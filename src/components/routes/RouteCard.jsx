@@ -6,6 +6,8 @@ import { cn } from '../../utils/cn.js';
 import { formatKm, formatRelativeDays, formatShortDate, plural } from '../../utils/format.js';
 import { BADGES, recentObstacleCount, routeChips } from './routeLabels.js';
 import { SafetyLine } from '../safety/SafetyBadge.jsx';
+import { SpeakButton } from '../accessibility/AccessibilityControls.jsx';
+import { speakRoute } from '../speech/spokenText.js';
 
 const SCORE_COLORS = { good: 'text-ok', limited: 'text-warn', bad: 'text-bad', unknown: 'text-mute' };
 
@@ -96,9 +98,12 @@ export function RouteCard({ evaluation, selected, onSelect, onOpen }) {
             : `Só ${Math.round(evaluation.verifiedShare * 100)}% do caminho foi verificado. Nota estimada: ${evaluation.estimatedScore}.`}
       </p>
 
-      <Button variant="secondary" size="sm" onClick={() => onOpen(evaluation)} aria-label={`Ver resumo: ${summary}`}>
-        Ver resumo da rota
-      </Button>
+      <div className="flex gap-2">
+        <Button variant="secondary" size="sm" className="flex-1" onClick={() => onOpen(evaluation)} aria-label={`Ver resumo: ${summary}`}>
+          Ver resumo da rota
+        </Button>
+        <SpeakButton text={speakRoute(evaluation)} label={`Ouvir a ${evaluation.route.name}`} />
+      </div>
     </Card>
   );
 }

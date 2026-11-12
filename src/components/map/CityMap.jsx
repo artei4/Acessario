@@ -1,6 +1,8 @@
 import { useMemo, useRef } from 'react';
 import { fitViewBox, project, toPoints, unproject } from './projection.js';
-import { LEVEL_COLORS, MapFrame } from './MapFrame.jsx';
+import { MapFrame } from './MapFrame.jsx';
+import { useAccessibility } from '../../context/AccessibilityContext.jsx';
+import { levelDash } from '../../domain/visionPalettes.js';
 
 export { LEVEL_COLORS, LEVEL_LABELS } from './MapFrame.jsx';
 
@@ -47,6 +49,7 @@ export function CityMap({
 }) {
   const svgRef = useRef(null);
   const dragging = useRef(false);
+  const { vision, levelColors } = useAccessibility();
 
   const viewBox = useMemo(() => {
     const points = focus?.length
@@ -138,11 +141,11 @@ export function CityMap({
                   <polyline
                     points={toPoints(segment.path)}
                     fill="none"
-                    stroke={LEVEL_COLORS[segment.level]}
+                    stroke={levelColors[segment.level]}
                     strokeWidth={width}
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    strokeDasharray={segment.level === 'unknown' ? `${6 * scale} ${4 * scale}` : undefined}
+                    strokeDasharray={levelDash(vision, segment.level)?.map((d) => d * width).join(' ')}
                   />
                   {/* área de toque maior que o traço visível */}
                   {onSelectRoute && <polyline points={toPoints(segment.path)} fill="none" stroke="transparent" strokeWidth={22 * scale} />}
@@ -176,7 +179,7 @@ export function CityMap({
             return (
               <g key={marker.id} transform={`translate(${x} ${y})`}>
                 <title>{marker.label}</title>
-                <circle r={7 * scale} fill={marker.kind === 'risk' ? '#b91c1c' : '#15803d'} stroke="#fff" strokeWidth={1.5 * scale} />
+                <circle r={7 * scale} style={{ fill: marker.kind === 'risk' ? 'var(--toast-bad)' : 'var(--toast-ok)' }} stroke="#fff" strokeWidth={1.5 * scale} />
                 <text fontSize={9 * scale} fontWeight="800" textAnchor="middle" dy={3 * scale} fill="#fff">
                   {marker.kind === 'risk' ? '!' : '✓'}
                 </text>
@@ -191,8 +194,8 @@ export function CityMap({
               </g>
             );
           }
-          const color = marker.kind === 'origin' ? '#15803d' : '#dc2626';
-          return <circle key={marker.id} cx={x} cy={y} r={6 * scale} fill={color} stroke="#fff" strokeWidth={2 * scale} />;
+          const color = marker.kind === 'origin' ? 'var(--toast-ok)' : 'var(--toast-bad)';
+          return <circle key={marker.id} cx={x} cy={y} r={6 * scale} style={{ fill: color }} stroke="#fff" strokeWidth={2 * scale} />;
         })}
       </svg>
 

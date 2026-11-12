@@ -10,6 +10,8 @@ import { RequireAccount } from '../components/layout/RequireAccount.jsx';
 import { useRouteDetail } from '../hooks/useRouteDetail.js';
 import { useReportActions } from '../hooks/useReportActions.js';
 import { useCurrentUser } from '../context/UserContext.jsx';
+import { useScreenAnnouncement } from '../context/AccessibilityContext.jsx';
+import { getReportType } from '../domain/reportTypes.js';
 
 /** Telas 5A (Confirmar relato) e 5B (Novo problema). */
 export function ReportPage({ routeId, segmentId, query, navigate, back }) {
@@ -29,6 +31,18 @@ export function ReportPage({ routeId, segmentId, query, navigate, back }) {
   const hasReports = reports.length > 0;
   const tab = hasReports && query.aba !== 'novo' ? 'confirmar' : 'novo';
   const setTab = (aba) => navigate(`/rotas/${routeId}/trechos/${segmentId}/relatar`, { ...query, aba }, { replace: true });
+
+  useScreenAnnouncement(
+    !evaluation || !current
+      ? ''
+      : tab === 'confirmar'
+        ? `Esse problema ainda existe? Trecho ${current.code}. ${reports.length === 1 ? 'Há 1 relato' : `Há ${reports.length} relatos`} nesta rota. ` +
+          `O primeiro: ${getReportType(reports[0]).label}${reports[0].description ? `, “${reports[0].description}”` : ''}. ` +
+          (isGuest ? 'Para votar, entre com uma conta.' : 'Responda se você confirma, se foi resolvido ou se está incorreto.')
+        : isGuest
+          ? 'Novo problema. Para relatar, entre com uma conta.'
+          : `Encontrou algum problema no trecho ${current.code}? Escolha o tipo, marque o ponto no mapa, descreva e envie o relato.`,
+  );
 
   const handleCreate = useCallback(
     async (report) => {

@@ -7,6 +7,8 @@ import { ThemeToggleButton } from '../components/ui/ThemeToggle.jsx';
 import { PROFILE_LIST } from '../domain/profiles.js';
 import { useCurrentUser } from '../context/UserContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
+import { useScreenAnnouncement } from '../context/AccessibilityContext.jsx';
+import { AccessibilityQuickStart } from '../components/accessibility/AccessibilityControls.jsx';
 
 /** Tela 1 — Perfil de mobilidade. */
 export function OnboardingPage({ navigate }) {
@@ -14,6 +16,9 @@ export function OnboardingPage({ navigate }) {
   const toast = useToast();
   const [profile, setProfile] = useState(user.profile ?? 'cadeirante');
   const [saving, setSaving] = useState(false);
+  useScreenAnnouncement(
+    `Olá, ${user.name}! Qual é o seu perfil de mobilidade? As opções são: ${PROFILE_LIST.map((p) => p.label).join(', ')}. Escolha com as setas e confirme em Continuar.`,
+  );
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -44,6 +49,8 @@ export function OnboardingPage({ navigate }) {
         <p className="m-0 text-ink-soft">Olá, {user.name}!</p>
         <h1 className="text-2xl font-extrabold tracking-tight text-balance">Qual é o seu perfil de mobilidade?</h1>
       </div>
+
+      <AccessibilityQuickStart />
 
       <fieldset className="m-0 flex flex-col gap-2 border-0 p-0">
         <legend className="sr-only">Perfil de mobilidade</legend>

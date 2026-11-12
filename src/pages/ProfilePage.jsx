@@ -8,6 +8,8 @@ import { IconButton } from '../components/ui/IconButton.jsx';
 import { Modal } from '../components/ui/Modal.jsx';
 import { Toggle } from '../components/ui/Toggle.jsx';
 import { ThemeSelector } from '../components/ui/ThemeToggle.jsx';
+import { AccessibilitySettings } from '../components/accessibility/AccessibilityControls.jsx';
+import { useScreenAnnouncement } from '../context/AccessibilityContext.jsx';
 import { ErrorState, LoadingState } from '../components/ui/States.jsx';
 import { MyReportItem } from '../components/reports/MyReportItem.jsx';
 import { ContributeForm } from '../components/reports/ContributeForm.jsx';
@@ -85,6 +87,9 @@ export function ProfilePage({ query, navigate }) {
   const actions = useReportActions({ onChange: mine.reload });
   const [editing, setEditing] = useState(false);
   const contributeRef = useRef(null);
+  useScreenAnnouncement(
+    `Perfil de ${user.name}. Aqui você muda as preferências de rota, a aparência, a acessibilidade com voz e cores${isGuest ? '' : ', vê seus relatos e contribui com o mapa'}. O botão Sair fica no topo.`,
+  );
 
   useEffect(() => {
     if (query.secao === 'contribuir') contributeRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -163,6 +168,8 @@ export function ProfilePage({ query, navigate }) {
         <ThemeSelector />
         <p className="m-0 text-xs text-ink-soft">Automático segue o tema do seu aparelho.</p>
       </Card>
+
+      <AccessibilitySettings />
 
       {isGuest ? (
         <RequireAccount action="salvar rotas recentes e ver seus relatos" />

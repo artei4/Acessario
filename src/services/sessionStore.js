@@ -50,10 +50,12 @@ export function createSessionStore(storage) {
       });
     },
 
-    /** Perfil e preferências do visitante: { profile, preferences }. */
+    /** Dados do visitante, só neste aparelho: { profile, preferences, lastTrip }. */
     guestData: () => readJson(GUEST_KEY, {}),
-    saveGuestData(data) {
-      safe(() => storage.setItem(GUEST_KEY, JSON.stringify(data)));
+    /** Junta as mudanças aos dados já salvos do visitante. */
+    saveGuestData(changes) {
+      const next = { ...readJson(GUEST_KEY, {}), ...changes };
+      safe(() => storage.setItem(GUEST_KEY, JSON.stringify(next)));
     },
 
     /** Atualiza o nome guardado (quando a pessoa edita o perfil). */

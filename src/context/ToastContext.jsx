@@ -1,12 +1,14 @@
 import { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react';
+import { useAccessibility } from './AccessibilityContext.jsx';
 
 const ToastContext = createContext(null);
 
-// tons fixos (não mudam com o tema) para garantir contraste com texto branco
-const TOAST_TONES = { success: 'bg-[#15803d]', danger: 'bg-[#b91c1c]', info: 'bg-[#0b2a5b]' };
+// tons escuros (não mudam com o tema) para garantir contraste com texto branco; mudam com a paleta de cores
+const TOAST_TONES = { success: 'bg-(--toast-ok)', danger: 'bg-(--toast-bad)', info: 'bg-[#0b2a5b]' };
 
 export function ToastProvider({ children }) {
   const [toasts, setToasts] = useState([]);
+  const { speak, voice } = useAccessibility();
   const nextId = useRef(1);
 
   const dismiss = useCallback((id) => setToasts((list) => list.filter((t) => t.id !== id)), []);
@@ -16,8 +18,10 @@ export function ToastProvider({ children }) {
       const id = nextId.current++;
       setToasts((list) => [...list.slice(-2), { id, message, tone }]);
       setTimeout(() => dismiss(id), duration);
+      // com o guia por voz, os avisos também são falados (depois do que estiver sendo lido)
+      speak(message, { interrupt: false });
     },
-    [dismiss],
+    [dismiss, speak],
   );
 
   const value = useMemo(() => ({ show, dismiss }), [show, dismiss]);
@@ -25,7 +29,7 @@ export function ToastProvider({ children }) {
   return (
     <ToastContext.Provider value={value}>
       {children}
-      <div className="fixed bottom-[76px] left-1/2 z-50 flex w-[min(408px,calc(100%-32px))] -translate-x-1/2 flex-col gap-2" role="status" aria-live="polite">
+      <div className={`fixed ${voice ? 'bottom-[136px]' : 'bottom-[76px]'} left-1/2 z-50 flex w-[min(408px,calc(100%-32px))] -translate-x-1/2 flex-col gap-2`} role="status" aria-live="polite">
         {toasts.map((toast) => (
           <button
             key={toast.id}
