@@ -1,3 +1,47 @@
+1. Nome da CitizenTech
+
+AcessaRio
+
+2. Cidade e bairro
+
+Município do Rio de Janeiro – todos os bairros.
+
+3. Cidadão beneficiado
+
+Pessoas com mobilidade reduzida, usuários de cadeira de rodas, pessoas com deficiência visual e idosos.
+
+4. Problema, em uma frase
+
+A falta de informações acessíveis e atualizadas sobre as condições de mobilidade urbana dificulta a circulação independente e segura de pessoas com deficiência e mobilidade reduzida.
+
+5. Como funciona
+
+Aplicativo colaborativo que mapeia as condições de acessibilidade urbana do Rio de Janeiro, permitindo que usuários compartilhem informações sobre obstáculos, rampas, calçadas e outros pontos de circulação, auxiliando na escolha de trajetos mais acessíveis.
+
+6. O que cada parte faz
+
+Front-end: responsável pela interface visual, estrutura e experiência de navegação do site.
+
+Web Development: responsável pelo desenvolvimento das funcionalidades e implementação dos recursos que permitem o funcionamento da plataforma.
+
+7. Link do repositório
+
+https://github.com/artei4/Acessario
+
+8. Indicador de impacto
+
+Número de pontos de acessibilidade mapeados e validados, quantidade de usuários beneficiados e locais com informações atualizadas sobre acessibilidade urbana.
+
+9. ODS conectados
+
+ODS 10 – Redução das Desigualdades.
+
+ODS 11 – Cidades e Comunidades Sustentáveis.
+
+ODS 3 – Saúde e Bem-Estar.
+
+
+
 # READMEWEB — o que cada função do código faz
 
 Guia simples do código JavaScript do AcessaRio, organizado por pasta. Cada item diz em poucas palavras o que a função, hook ou componente faz. Para instalar e rodar o projeto, veja o README.md.
